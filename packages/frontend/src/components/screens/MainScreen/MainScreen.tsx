@@ -46,6 +46,9 @@ import { useChatContextMenu } from '../../chat/ChatContextMenu'
 
 const log = getLogger('MainScreen')
 
+const CHAT_LIST_MIN_WIDTH = 150
+const CHAT_VIEW_MIN_WIDTH = 360
+
 type Props = {
   accountId?: number
 }
@@ -61,6 +64,25 @@ export default function MainScreen({ accountId }: Props) {
   const [archivedChatsSelected, setArchivedChatsSelected] = useState(false)
   const { chatId, chatWithLinger, selectChat, unselectChat } = useChat()
   const { smallScreenMode } = useContext(ScreenContext)
+  const settingsStore = useSettingsStore()[0]
+
+  const mainScreenRef = useRef<HTMLDivElement | null>(null)
+  const [chatListWidth, setChatListWidth] = useState<number>(
+    () => settingsStore?.desktopSettings.chatListPaneWidth ?? 0
+  )
+  const [isResizing, setIsResizing] = useState(false)
+  const chatListWidthRef = useRef(chatListWidth)
+
+  useEffect(() => {
+    chatListWidthRef.current = chatListWidth
+  }, [chatListWidth])
+
+  useEffect(() => {
+    const width = settingsStore?.desktopSettings.chatListPaneWidth
+    if (typeof width === 'number') {
+      setChatListWidth(width)
+    }
+  }, [settingsStore?.desktopSettings.chatListPaneWidth])
 
   // Small hack/misuse of keyBindingAction to setArchivedChatsSelected from
   // other components (especially ViewProfile when selecting a shared chat/group)
@@ -118,6 +140,65 @@ export default function MainScreen({ accountId }: Props) {
       setArchivedChatsSelected(false)
     }
   }, [archivedChatsSelected, chatWithLinger?.archived, searchChats])
+
+  const clampChatListWidth = useCallback((clientX: number) => {
+    const container = mainScreenRef.current
+    if (!container) {
+      return chatListWidthRef.current
+    }
+    const { left, width } = container.getBoundingClientRect()
+    const maxWidth = Math.max(CHAT_LIST_MIN_WIDTH, width - CHAT_VIEW_MIN_WIDTH)
+    return Math.max(CHAT_LIST_MIN_WIDTH, Math.min(maxWidth, clientX - left))
+  }, [])
+
+  const startResize = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (smallScreenMode) {
+        return
+      }
+      event.preventDefault()
+      event.currentTarget.setPointerCapture(event.pointerId)
+      setIsResizing(true)
+      const updateWidth = (clientX: number) => {
+        const nextWidth = clampChatListWidth(clientX)
+        chatListWidthRef.current = nextWidth
+        setChatListWidth(nextWidth)
+      }
+      updateWidth(event.clientX)
+
+      const handlePointerMove = (moveEvent: PointerEvent) => {
+        updateWidth(moveEvent.clientX)
+      }
+      const handlePointerUp = () => {
+        window.removeEventListener('pointermove', handlePointerMove)
+        window.removeEventListener('pointerup', handlePointerUp)
+        window.removeEventListener('pointercancel', handlePointerUp)
+        setIsResizing(false)
+        SettingsStoreInstance.effect.setDesktopSetting(
+          'chatListPaneWidth',
+          chatListWidthRef.current
+        )
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+      }
+
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+      window.addEventListener('pointermove', handlePointerMove)
+      window.addEventListener('pointerup', handlePointerUp)
+      window.addEventListener('pointercancel', handlePointerUp)
+    },
+    [clampChatListWidth, smallScreenMode]
+  )
+
+  const resetChatListWidth = useCallback(() => {
+    chatListWidthRef.current = 0
+    setChatListWidth(0)
+    SettingsStoreInstance.effect.setDesktopSetting('chatListPaneWidth', 0)
+  }, [])
+
+  const chatListStyle =
+    chatListWidth > 0 ? { width: chatListWidth, flex: '0 0 auto' } : undefined
 
   useEffect(() => {
     window.__chatlistSetSearch = searchChats
@@ -245,6 +326,7 @@ export default function MainScreen({ accountId }: Props) {
 
   return (
     <div
+      ref={mainScreenRef}
       className={`main-screen ${smallScreenMode ? 'small-screen' : ''} ${
         !messageSectionShouldBeHidden ? 'chat-view-open' : ''
       }`}
@@ -264,6 +346,7 @@ export default function MainScreen({ accountId }: Props) {
         // a separate string.
         // The same goes for other occurrences of `tx('pref_chats')`.
         aria-label={tx('pref_chats')}
+        style={chatListStyle}
       >
         <section className={styles.chatListHeader} data-tauri-drag-region>
           {showArchivedChats && (
@@ -305,6 +388,38 @@ export default function MainScreen({ accountId }: Props) {
           }}
         />
       </section>
+      {!smallScreenMode && (
+        <div
+          role='separator'
+          aria-orientation='vertical'
+          aria-label='Resize chat list'
+          tabIndex={0}
+          className={`${styles.chatListResizer} ${
+            isResizing ? styles.isResizing : ''
+          }`}
+          onPointerDown={startResize}
+          onDoubleClick={resetChatListWidth}
+          onKeyDown={event => {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+              return
+            }
+            event.preventDefault()
+            const delta = event.key === 'ArrowLeft' ? -16 : 16
+            const container = mainScreenRef.current
+            if (!container) {
+              return
+            }
+            const { left } = container.getBoundingClientRect()
+            const nextWidth = clampChatListWidth(left + chatListWidth + delta)
+            chatListWidthRef.current = nextWidth
+            setChatListWidth(nextWidth)
+            SettingsStoreInstance.effect.setDesktopSetting(
+              'chatListPaneWidth',
+              nextWidth
+            )
+          }}
+        />
+      )}
       <section
         role='region'
         aria-labelledby='chat-section-heading'

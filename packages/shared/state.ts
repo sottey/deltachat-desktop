@@ -32,5 +32,6 @@ export function getDefaultState(): DesktopSettingsType {
     isMentionsEnabled: true,
     inChatSoundsVolume: 0.5,
     autostart: true,
+    chatListPaneWidth: 0,
   }
 }

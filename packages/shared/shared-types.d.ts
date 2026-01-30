@@ -78,6 +78,11 @@ export interface DesktopSettingsType {
   contentProtectionEnabled: boolean
   /** whether to start with system on supported platforms */
   autostart: boolean
+  /**
+   * Width of the chat list pane in pixels.
+   * 0 means "use default flex sizing".
+   */
+  chatListPaneWidth: number
 }
 
 export interface RC_Config {

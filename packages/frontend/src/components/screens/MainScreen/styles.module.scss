@@ -49,6 +49,31 @@
     }
   }
 }
+
+.chatListResizer {
+  position: relative;
+  width: 8px;
+  flex: 0 0 auto;
+  cursor: col-resize;
+  user-select: none;
+  background: transparent;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+    background: var(--separatorColor);
+  }
+
+  &:hover::before,
+  &.isResizing::before {
+    background: var(--globalLinkColor);
+  }
+}
 .chatAndNavbar {
   // Otherwise e.g. the contents of the gallery view
   // (tabs, sepcifically) will refuse to shrink,
