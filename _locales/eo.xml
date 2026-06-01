@@ -28,8 +28,6 @@
     <string name="update">Ĝisdatigi</string>
     <string name="emoji">Emoji</string>
     <string name="attachment">Aldonaĵo</string>
-    <!-- the placeholder will be replaced by the name of the image or file to attach -->
-    <string name="ask_attach">Ĉu alkroĉi \"%1$s\"?</string>
     <string name="back">Reen</string>
     <string name="close">Fermi</string>
     <string name="close_window">Fermi fenestron</string>
@@ -45,7 +43,9 @@
     <string name="archive">Arĥivi</string>
     <!-- Verb "to unarchive", as in "remove a chat from the archive", opposite of the previous string -->
     <string name="unarchive">Malarĥivi</string>
+    <!-- Verb "to mute". used to mute a chat, so that it is silenced e.g. does not make noise or cause notifications -->
     <string name="mute">Muta sciigoj</string>
+    <!-- Adjective "smth is muted". used to describe a muted or silenced chat, that e.g. does not make noise or cause notifications -->
     <string name="muted">Silentigita</string>
     <string name="ephemeral_messages">Memviŝontaj mesaĝoj</string>
     <string name="ephemeral_messages_hint">Aplikebla al ĉiuj anoj de tiu ĉi babilejo kiuj uzas Delta Chat; ili ankoraŭ povas kopii, konservi kaj plusendi mesaĝojn, kaj uzi aliajn retpoŝtajn klientojn.</string>
@@ -54,15 +54,18 @@
     <string name="media">Aŭdovidaĵoj</string>
     <string name="apps_and_media">Apoj kaj vidaĵoj</string>
     <string name="profile">Profilo</string>
+    <!-- deprecated -->
     <string name="all_profiles">Ĉiuj profiloj</string>
+    <!-- deprecated -->
     <string name="current_profile">Aktuala profilo</string>
     <string name="main_menu">Ĉefa menuo</string>
     <string name="start_chat">Komenci Babiladon</string>
     <string name="show_full_message">Afiŝu la tutan mesaĝon...</string>
     <!-- Stay short here, say ~16 characters. The source string could also be "All Read", maybe that hint can make translations easier :) -->
     <string name="mark_all_as_read">Marki ĉiujn legitaj</string>
+    <!-- Used as an menu entry or button -->
     <string name="mark_as_read">Marki kiel legita</string>
-    <!-- Shortest text for "Mark as being read". In english, this could be "Read" (past tense of "to read"), in german, this could be "Gelesen". -->
+    <!-- Used beside an icon with very few space. Shortest text for "Mark as being read". In english, this could be "Read" (past tense of "to read"), in german, this could be "Gelesen". -->
     <string name="mark_as_read_short">Legi</string>
     <!-- Placeholder text when something is loading -->
     <string name="loading">Ŝarĝado...</string>
@@ -74,11 +77,8 @@
     <string name="always">Ĉiam</string>
     <string name="always_load_remote_images">Ĉiam ŝargu forajn bildojn</string>
     <string name="once">Unufoje</string>
+    <!-- deprecated -->
     <string name="show_warning">Afiŝu averton</string>
-    <!-- deprecated, UI must not offer an option to show the password -->
-    <string name="show_password">Montri pasvorton</string>
-    <!-- deprecated, UI must not offer an option to show the password -->
-    <string name="hide_password">Kaŝi pasvorton</string>
     <string name="not_now">Ne nun</string>
     <string name="never">Neniam</string>
     <string name="one_moment">Unu momenton…</string>
@@ -111,19 +111,9 @@
     <string name="last_month">Pasint-monate</string>
     <!-- Refers to the time a contact was last seen. Shown below contact name in the profile. The placeholder will be replaced by date or time, resulting in "Last seen at 12:13 AM" or "Last seen Nov 12" -->
     <string name="last_seen_at">Laste vidita je%1$s</string>
-    <!-- Refers to the time a contact was last seen. Shown below contact name in the profile. The placeholder will be replaced by a relative point in time as "3 minutes ago" (see https://momentjs.com for more examples and languages)-->
+    <!-- Refers to the time a contact was last seen. Shown below contact name in the profile. The placeholder will be replaced by a relative point in time as "3 minutes ago" (see https://momentjs.com for more examples and languages) -->
     <string name="last_seen_relative">Laste vidita %1$s</string>
     <string name="last_seen_unknown">Laste vidita: nedisponebla informo</string>
-    <!-- Shown in call duration. Avoid abbreviations, prefer full words ex. "N seconds". -->
-    <plurals name="n_seconds_ext">
-        <item quantity="one">%d sekundo</item>
-        <item quantity="other">%d sekundoj</item>
-    </plurals>
-    <!-- Shown in call duration. Avoid abbreviations, prefer full words ex. "N minutes". -->
-    <plurals name="n_minutes_ext">
-        <item quantity="one">%d minuto</item>
-        <item quantity="other">%d minutoj</item>
-    </plurals>
     <!-- Shown beside messages that are "N minutes old". Prefer short strings, or well-known abbreviations. -->
     <plurals name="n_minutes">
         <item quantity="one">%d min</item>
@@ -173,6 +163,7 @@
     <!-- "Stickers" as known from other messengers; in some languages, the English "Sticker" is fine. -->
     <string name="sticker">Glumarko</string>
     <string name="images">Bildoj</string>
+    <!-- a noun, used for "Music" and other "Audio" files -->
     <string name="audio">Sonaĵo</string>
     <string name="voice_message">Voĉmesaĝo</string>
     <string name="forwarded">Plusendita</string>
@@ -185,6 +176,7 @@
     <string name="camera">Fotilo</string>
     <!-- As in "start a video recording" or "take a photo"; eg. the description of the "shutter button" in cameras -->
     <string name="capture">Kapti</string>
+    <!-- Switch eg. from front to back camera -->
     <string name="switch_camera">Elektu alian kameraon</string>
     <string name="toggle_fullscreen">Baskulu el/al la plena ekrano</string>
     <string name="location">Loko</string>
@@ -222,8 +214,6 @@
     <string name="menu_new_contact">Nova kontakto</string>
     <string name="menu_new_chat">Nova babilo</string>
     <string name="menu_new_group">Nova grupo</string>
-    <!-- deprecated -->
-    <string name="add_recipients">Aldoni Ricevantojn</string>
     <string name="menu_send">Sendi</string>
     <string name="menu_toggle_keyboard">Baskuligi emoĝian klavaron</string>
     <string name="menu_edit_group">Redakti grupon</string>
@@ -280,7 +270,6 @@
     <string name="menu_more_options">Pli da ebloj</string>
     <string name="menu_learn_spelling">Lernu la ortografion</string>
     <string name="jump_to_message">Iru al mesaĝo</string>
-    <string name="copy_json">Kopiu JSON</string>
     <string name="title_share_location">Konigi lokon al ĉiuj grupanoj</string>
     <string name="device_talk">Aparataj mesaĝoj</string>
     <string name="device_talk_subtitle">Loke generitaj mesaĝoj</string>
@@ -300,14 +289,16 @@
     <string name="mute_for_seven_days">Silentigi por 7 tagoj</string>
     <string name="mute_forever">Silentigi por ĉiam</string>
 
+    <!-- deprecated -->
     <string name="share_location_for_5_minutes">por 5 minutoj</string>
+
     <string name="share_location_for_30_minutes">por 30 minutoj</string>
     <string name="share_location_for_one_hour">por 1 horo</string>
     <string name="share_location_for_two_hours">por 2 horoj</string>
     <string name="share_location_for_six_hours">por 6 horoj</string>
-
     <string name="file_saved_to">Dosiero konservita kiel \"%1$s\".</string>
 
+    <!-- deprecated, use ask_forward_messages -->
     <string name="ask_forward">Plusendi mesaĝojn al %1$s?</string>
     <string name="ask_start_chat_with">Babili kun %1$s?</string>
     <!-- %1$s is replaced by a comma-separated list of names -->
@@ -315,7 +306,6 @@
     <!-- contact list -->
     <string name="contacts_title">Kontaktoj</string>
     <string name="contacts_type_email_above">Enigu retadreson supren</string>
-
 
     <!-- chatlist and chat view -->
     <plurals name="chat_archived">
@@ -346,10 +336,6 @@
     <string name="save_message">Konservi</string>
     <string name="saved_messages">Konservitaj mesaĝoj</string>
     <string name="retry_send">Reprovi sendi mesaĝon</string>
-    <string name="show_location_traces">Montri spurojn</string>
-    <string name="add_poi">Sendi punkton de intereso</string>
-
-
     <!-- search -->
     <string name="search">Serĉi</string>
     <string name="search_explain">Serĉi babilojn, kontaktojn, kaj mesaĝojn</string>
@@ -358,6 +344,7 @@
     <string name="group_name">Grup-nomo</string>
     <string name="group_avatar">Bildo de la grupo</string>
     <string name="group_create_button">Krei grupon</string>
+    <!-- deprecated, use please_enter_chat_name -->
     <string name="group_please_enter_group_name">Bonvolu enigi nomon por la grupo.</string>
     <string name="group_add_members">Aldoni anojn</string>
     <string name="group_self_not_in_group">Vi devas esti grupano por fari tion.</string>
@@ -399,10 +386,10 @@
     <string name="forward_to">Plusendi al…</string>
     <string name="share_abort">Kunhavigado ĉesis pro manko de permesoj.</string>
 
-
     <string name="pref_profile_photo">Profilbildo</string>
     <string name="pref_blocked_contacts">Blokitaj kontaktoj</string>
     <string name="pref_your_name">Via nomo</string>
+    <!-- Option name for changing behaviour of the "Enter key" to sending out a message directly (instead of adding new line). If in doubt, please refer to a similar option in other messengers. -->
     <string name="pref_enter_sends">La Eniga klavo kaŭzas sendon</string>
     <string name="pref_enter_sends_explain">Premado de la Eniga klavo sendos mesaĝojn</string>
     <string name="pref_vibrate">Vibrado</string>
@@ -416,8 +403,6 @@
     <string name="pref_sound">Sono</string>
     <string name="pref_silent">Silenta</string>
     <string name="pref_privacy">Privateco</string>
-    <!-- deprecated, use pref_chats -->
-    <string name="pref_chats_and_media">Interparoloj kaj aŭdvidaĵoj</string>
     <string name="pref_system_default">Sistema defaŭlto</string>
     <!-- Translators: as in "opposite of dark" -->
     <string name="pref_light_theme">Hela</string>
@@ -446,8 +431,9 @@
     <string name="pref_background">Fono</string>
     <string name="pref_background_btn_default">Uzi defaŭltan bildon</string>
     <string name="pref_background_btn_gallery">Elekti el galerio</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_all">Ĉiuj</string>
-    <!-- notifications  -->
+    <!-- notifications -->
     <string name="notify_reply_button">Respondi</string>
     <string name="notify_new_message">Nova mesaĝo</string>
     <string name="notify_priority_high">Alta</string>

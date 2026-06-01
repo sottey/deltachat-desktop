@@ -34,9 +34,12 @@ const { WebsocketTransport } = yerpc
 
 let logJsonrpcConnection = false
 
+const baseWsUrl = new URL(location.href)
+baseWsUrl.protocol = location.protocol === 'http:' ? 'ws:' : 'wss:'
+
 class BrowserTransport extends WebsocketTransport {
   constructor(private callCounterFunction: (label: string) => void) {
-    super('wss://localhost:3000/ws/dc')
+    super(new URL('ws/dc', baseWsUrl).href)
   }
 
   protected _onmessage(message: yerpc.Message): void {
@@ -83,7 +86,7 @@ class BrowserRuntime implements Runtime {
   socket: WebSocket
   private rc_config: RC_Config | null = null
   constructor() {
-    this.socket = new WebSocket('wss://localhost:3000/ws/backend')
+    this.socket = new WebSocket(new URL('ws/backend', baseWsUrl).href)
 
     this.socket.addEventListener('open', () => {
       // eslint-disable-next-line no-console
@@ -176,11 +179,11 @@ class BrowserRuntime implements Runtime {
   }
   openMessageHTML(
     _accountId: number,
-    _message_id: number,
+    _messageId: number,
     _isContactRequest: boolean,
     _subject: string,
     _sender: string,
-    _receiveTime: string,
+    _sentTime: string,
     _content: string
   ): void {
     throw new Error('Method not implemented.')
@@ -206,6 +209,9 @@ class BrowserRuntime implements Runtime {
   }
   startOutgoingVideoCall(): void {
     this.log.critical('Method not implemented.')
+  }
+  async openIncomingVideoCallWindow() {
+    throw new Error('Method not implemented.')
   }
   async saveBackgroundImage(
     file: string,
@@ -646,6 +652,9 @@ class BrowserRuntime implements Runtime {
     return ''
   }
   transformStickerURL(_sticker_path: string): string {
+    throw new Error('sticker picker is not implemented yet for browser')
+  }
+  async deleteSticker(_stickerPath: string): Promise<void> {
     throw new Error('sticker picker is not implemented yet for browser')
   }
   async showOpenFileDialog(

@@ -48,8 +48,6 @@ $info-text-max-width: 400px;
         --local-avatar-color: #bcbac9;
         background-color: var(--local-avatar-color);
 
-        top: -121px;
-        left: -10px;
         border-radius: 50%;
         width: 36px;
         height: 36px;
@@ -90,33 +88,19 @@ $info-text-max-width: 400px;
     padding-bottom: 10px;
 
     .msg-body {
-      &.msg-body--clickable {
-        @include mixins.button-reset;
-        display: block;
-
-        > .text {
-          cursor: pointer;
-        }
-      }
       &.call {
         > .text {
           --call-icon-size: 24px;
           margin-inline-end: var(--call-icon-size);
           white-space: nowrap;
           font-weight: bold;
-          &::after {
-            content: '';
+          .phone-icon {
             position: absolute;
             top: 18px;
             inset-inline-end: 8px;
             transform: translateY(-50%);
             width: var(--call-icon-size);
             height: var(--call-icon-size);
-            @include mixins.color-svg(
-              './images/icons/phone.svg',
-              var(--messageText),
-              100%
-            );
           }
         }
       }
@@ -126,6 +110,7 @@ $info-text-max-width: 400px;
         font-size: 14px;
         line-height: 18px;
         text-align: start;
+        unicode-bidi: plaintext;
 
         overflow-wrap: break-word;
         word-wrap: break-word;
@@ -200,24 +185,12 @@ $info-text-max-width: 400px;
         // https://github.com/deltachat/deltachat-desktop/pull/5227#discussion_r2173774006.
         min-height: calc($font-size * $line-height);
       }
-      div.experimental {
-        color: var(--colorDanger);
-        background: var(--contextMenuBg);
-        border-radius: 8px;
-      }
     }
   }
 
   .metadata {
     margin-top: 10px;
     margin-bottom: -7px;
-  }
-
-  .module-message__img-attachment {
-    object-fit: cover;
-    width: auto;
-    max-width: 100%;
-    min-height: unset;
   }
 
   .show-html {
@@ -252,14 +225,6 @@ $info-text-max-width: 400px;
 .message.incoming {
   margin-inline-start: 0;
 
-  .msg-body.call > .text::after {
-    @include mixins.color-svg(
-      './images/icons/phone.svg',
-      var(--messageText),
-      100%
-    );
-  }
-
   .metadata:not(.with-image-no-caption) {
     .email-icon {
       @include mixins.color-svg(
@@ -286,7 +251,8 @@ $info-text-max-width: 400px;
     }
 
     .date,
-    .edited {
+    .edited,
+    .viewCount {
       color: var(--messageMetadataIncoming);
     }
   }
@@ -309,7 +275,8 @@ $info-text-max-width: 400px;
 
   .metadata:not(.with-image-no-caption) {
     .date,
-    .edited {
+    .edited,
+    .viewCount {
       color: var(--messageOutgoingStatusColor);
     }
 
@@ -357,6 +324,13 @@ $info-text-max-width: 400px;
   }
 }
 
+.message.video-only {
+  .msg-container {
+    /* make the whole container black, as videos always have a black background */
+    background-color: #000;
+  }
+}
+
 .message.type-sticker {
   .msg-container {
     background-color: transparent !important;
@@ -364,20 +338,6 @@ $info-text-max-width: 400px;
     .author-wrapper,
     .forwarded-indicator {
       display: none;
-    }
-
-    .quote-background {
-      // `.msg-container` background is transparent,
-      // so let's explicitly apply the color just for the quote.
-      background: var(--messageBg);
-
-      padding: 5px;
-      padding-inline-start: 6px;
-      border-radius: 7px;
-
-      & > .quote {
-        margin: 0;
-      }
     }
   }
 
@@ -391,7 +351,7 @@ $info-text-max-width: 400px;
       // where the footer text wraps.
       margin-bottom: 26px;
 
-      cursor: default;
+      cursor: pointer;
     }
   }
 
@@ -406,7 +366,8 @@ $info-text-max-width: 400px;
 
   .metadata {
     .date,
-    .edited {
+    .edited,
+    .viewCount {
       font-size: 11px;
       color: white;
     }
@@ -434,6 +395,25 @@ $info-text-max-width: 400px;
   }
 }
 
+.message.type-sticker,
+.message.video-only {
+  .msg-container {
+    .quote-background {
+      // `.msg-container` background is transparent or black,
+      // so let's explicitly apply the color just for the quote.
+      background: var(--messageBg);
+
+      padding: 5px;
+      padding-inline-start: 6px;
+      border-radius: 7px;
+
+      & > .quote {
+        margin: 0;
+      }
+    }
+  }
+}
+
 .message.has-html {
   .text {
     padding-bottom: 10px;
@@ -457,14 +437,6 @@ $info-text-max-width: 400px;
       @include mixins.button-reset;
 
       cursor: pointer;
-    }
-  }
-}
-
-.setupMessage {
-  .message {
-    .text {
-      color: var(--setupMessageText);
     }
   }
 }
@@ -585,10 +557,15 @@ $info-text-max-width: 400px;
     text-overflow: ellipsis;
   }
 
+  .quote-author {
+    white-space: nowrap;
+  }
+
   .quoted-text {
     font-size: 12px;
     line-height: 12px;
     margin: 0;
+    unicode-bidi: plaintext;
     max-height: 40px;
     overflow: hidden;
     line-clamp: 3;

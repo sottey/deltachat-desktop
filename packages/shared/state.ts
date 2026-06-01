@@ -13,8 +13,6 @@ export function getDefaultState(): DesktopSettingsType {
     locale: null, // if this is null, the system chooses the system language that electron reports
     credentials: undefined,
     lastAccount: undefined,
-    enableAVCallsV2: false,
-    enableBroadcastLists: false,
     enableOnDemandLocationStreaming: false,
     chatViewBgImg: undefined,
     lastChats: {},
@@ -29,9 +27,9 @@ export function getDefaultState(): DesktopSettingsType {
     galleryImageKeepAspectRatio: false,
     useSystemUIFont: false,
     contentProtectionEnabled: false,
-    isMentionsEnabled: true,
     inChatSoundsVolume: 0.5,
     autostart: true,
     chatListPaneWidth: 0,
+    autostartElectron: false,
   }
 }

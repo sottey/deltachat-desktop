@@ -26,6 +26,7 @@
     <string name="archive">Arxivləşmə</string>
     <!-- Verb "to unarchive", as in "remove a chat from the archive", opposite of the previous string -->
     <string name="unarchive">Arxivdən çıxarma</string>
+    <!-- Verb "to mute". used to mute a chat, so that it is silenced e.g. does not make noise or cause notifications -->
     <string name="mute">Səssiz</string>
     <string name="ephemeral_messages">Yox olan mesajlar</string>
     <string name="save">Saxla</string>
@@ -87,6 +88,7 @@
     <string name="image">Şəkil</string>
     <string name="gif">Gif</string>
     <string name="images">Şəkillər</string>
+    <!-- a noun, used for "Music" and other "Audio" files -->
     <string name="audio">Audio</string>
     <string name="voice_message">Səsli mesaj</string>
     <string name="forwarded_message">Köçürülmüş mesaj</string>
@@ -163,12 +165,14 @@
     <string name="mute_for_seven_days">7 günlük söndür</string>
     <string name="mute_forever">Həmişə səssiz</string>
 
+    <!-- deprecated -->
     <string name="share_location_for_5_minutes">5 dəqiqə üçün</string>
+
     <string name="share_location_for_30_minutes">30 qəqiqə üçün</string>
     <string name="share_location_for_one_hour">1 saat üçün</string>
     <string name="share_location_for_two_hours">2 saat üçün </string>
     <string name="share_location_for_six_hours">6 saat üçün</string>
-
+    <!-- deprecated, use ask_forward_messages -->
     <string name="ask_forward">Mesajları yönləndirin %1$sə-?</string>
     <string name="ask_export_attachment">Faylı ixrac etmək? Faylların ixracı cihazınızdakı hər hansı digər tətbiqlərə daxil olmağa imkan verəcəkdir. \n\n Razısan?</string>
     <string name="ask_block_contact">Bu kontaktı bloklamaq? Bu kontaktdan artıq mesaj qəbul etməyəcəksiniz.</string>
@@ -180,7 +184,6 @@
     <!-- contact list -->
     <string name="contacts_title">Kontaktlar</string>
     <string name="contacts_type_email_above">E-poçt ünvanını yazın</string>
-
 
     <!-- chatlist and chat view -->
     <plurals name="chat_archived">
@@ -213,12 +216,6 @@
     <string name="save_message">Saxla</string>
     <string name="saved_messages">Saxlanılmış mesajlar</string>
     <string name="retry_send">Mesaji yenidən göndərməyə cəht et</string>
-    <!-- map -->
-    <string name="filter_map_on_time">Vaxt məhdudiyyəti ilə yerləşmə yerləri göstərin</string>
-    <string name="show_location_traces">İzləri göstərmək</string>
-    <string name="add_poi">Maraq nöqtəsini göndərin</string>
-
-
     <!-- search -->
     <string name="search">Axtarış</string>
     <string name="search_explain">Çatlar, kontaktlar və mesajlar axtar</string>
@@ -227,6 +224,7 @@
     <string name="group_name">Qrup adı</string>
     <string name="group_avatar">Qrupun şəkili</string>
     <string name="group_create_button">Qrup yarat</string>
+    <!-- deprecated, use please_enter_chat_name -->
     <string name="group_please_enter_group_name">Xahiş edirik qrup üçün bir ad daxil et.</string>
     <string name="group_add_members">Üzv elavə et</string>
     <string name="group_self_not_in_group">Bunu etmək üçün qrupun üzvü olmalısan.</string>
@@ -267,10 +265,7 @@
     <string name="forward_to">İrəli ...</string>
     <string name="share_abort">İcazə olmadığına görə göndərmə kəsildi</string>
 
-
     <!-- preferences -->
-    <string name="pref_using_custom">:Xüsusi istifadə %s</string>
-    <string name="pref_using_default">Varsayılan istifadə: %s</string>
     <string name="pref_profile_info_headline">Profil məlumatınız</string>
     <string name="pref_profile_photo">Profil şəkili</string>
     <string name="pref_blocked_contacts">Bloklanmış kontaktlar</string>
@@ -278,6 +273,7 @@
     <string name="pref_your_name">Adın</string>
     <!-- Label of the Bio/Signature/Status/Motto field -->
     <string name="pref_default_status_label">Yazını mətni</string>
+    <!-- Option name for changing behaviour of the "Enter key" to sending out a message directly (instead of adding new line). If in doubt, please refer to a similar option in other messengers. -->
     <string name="pref_enter_sends">Enter açarı ilə göndərmək</string>
     <string name="pref_enter_sends_explain">Enter düyməsini basaraq mətn mesajları göndərəcək</string>
     <string name="pref_outgoing_media_quality">Göndərilən medianın keyfiyyatı</string>
@@ -295,8 +291,6 @@
     <string name="pref_sound">Səs</string>
     <string name="pref_silent">Səssiz</string>
     <string name="pref_privacy">Gizlilik</string>
-    <!-- deprecated, use pref_chats -->
-    <string name="pref_chats_and_media">Çatlar və faillar</string>
     <!-- Translators: as in "opposite of dark" -->
     <string name="pref_light_theme">Açıq</string>
     <string name="pref_dark_theme">Tünd</string>
@@ -325,11 +319,17 @@
     <string name="pref_background">Fon</string>
     <string name="pref_background_btn_default">Hal hazırdaki şəkili istifadə edin</string>
     <string name="pref_background_btn_gallery">Fotoalbomdan götürün</string>
+    <!-- deprecated -->
     <string name="pref_imap_folder_warn_disable_defaults">Bu seçimi ləğv etsəniz, serverinizin və digər müştərilərinizin müvafiq olaraq konfiqurasiya olunduğundan əmin olun. \n\nAyrıca şeylər işləməyəcəkdir.</string>
+    <!-- deprecated -->
     <string name="pref_auto_folder_moves">DeltaChat qovluğuna avtomatik keçid</string>
+    <!-- deprecated -->
     <string name="pref_show_emails">Klassik e-poçtları göstər</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_no">Xeyir, ancaq çatlar</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_accepted_contacts">Qəbul edilən kontaktlar üçün</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_all">Hamısı</string>
     <string name="pref_background_default">Özünəməxsus arxa fon</string>
     <string name="pref_background_default_color">Özünəməxsus rəng</string>
@@ -373,7 +373,7 @@
     <string name="qrshow_join_contact_hint">%1$silə əlaqə qurmaq üçün bunu skan edin</string>
     <string name="qrshow_join_contact_no_connection_toast">İnternet bağlantısı yoxdur, QR kodunu qura bilmir.</string>
     <string name="contact_verified">%1$s yoxlanıldı.</string>
-    <!-- notifications  -->
+    <!-- notifications -->
     <string name="notify_reply_button">Cavab ver</string>
     <string name="notify_new_message">Yeni mesaj</string>
     <string name="notify_background_connection_enabled">Arxa fon əlaqəsi aktivdir</string>

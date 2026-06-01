@@ -1,11 +1,13 @@
 // eslint-disable-next-line no-console
 console.time('init')
 
-import { mkdirSync, Stats, watchFile } from 'fs'
-import { app as rawApp, dialog, ipcMain, protocol } from 'electron'
+import { existsSync, mkdirSync, Stats, watchFile } from 'fs'
+import fsPromises from 'fs/promises'
+import { app as rawApp, dialog, ipcMain, protocol, clipboard } from 'electron'
+import { BrowserWindow } from 'electron/main'
 import rc from './rc.js'
 import contextMenu from './electron-context-menu.js'
-import { initIsWindowsStorePackageVar } from './isAppx.js'
+import { appx, initIsWindowsStorePackageVar } from './isAppx.js'
 import { getHelpMenu } from './help_menu.js'
 import { initialisePowerMonitor } from './resume_from_sleep.js'
 
@@ -102,9 +104,20 @@ mkdirSync(getLogsPath(), { recursive: true })
 mkdirSync(getCustomThemesPath(), { recursive: true })
 
 // Setup Logger
-import { cleanupLogFolder, createLogHandler } from './log-handler.js'
-const logHandler = createLogHandler()
-import { getLogger, setLogHandler } from '../../shared/logger.js'
+import {
+  cleanupLogFolder,
+  createLogHandler,
+} from '@deltachat-desktop/shared/log-handler.js'
+const logHandler = createLogHandler(getLogsPath(), {
+  onWriteError: (err, logFilePath) => {
+    // Trigger our `uncaughtException` listener.
+    throw new Error(
+      `Failed to write to logfile (${logFilePath}): ${err.message}`,
+      { cause: err }
+    )
+  },
+})
+import { getLogger, setLogHandler } from '@deltachat-desktop/shared/logger.js'
 const log = getLogger('main/index')
 setLogHandler(logHandler.log, rc)
 log.info(
@@ -123,12 +136,14 @@ process.on('uncaughtException', err => {
   }
   dialog.showErrorBox(
     'Error - uncaughtException',
-    `See the logfile (${logHandler.logFilePath()}) for details and contact the developers about this issue:\n` +
-      JSON.stringify(error)
+    `See the logfile (${logHandler.logFilePath()}) for details and contact the developers about this issue:\n\n` +
+      error.message +
+      '\n\n' +
+      error.stack
   )
 })
 
-import setLanguage, { getCurrentLocaleDate } from './load-translations.js'
+import setLanguage, { getCurrentLocaleDate, tx } from './load-translations.js'
 import * as ipc from './ipc.js'
 import { init as initMenu } from './menu.js'
 import { DesktopSettings } from './desktop_settings.js'
@@ -141,10 +156,12 @@ import {
   WEBXDC_PARTITION_PREFIX,
   webxdcStartUpCleanup,
 } from './deltachat/webxdc.js'
+import { openExternalWhitelistedOrPromptToCopy } from './deltachat/link-clicks.js'
 import {
   cleanupDraftTempDir,
   cleanupInternalTempDirs,
 } from './cleanup_temp_dir.js'
+import { shouldHandleLinkInMainApp } from '@deltachat-desktop/shared/util.js'
 
 app.ipcReady = false
 app.isQuitting = false
@@ -170,6 +187,11 @@ Also make sure you are not trying to run multiple instances of deltachat.`
 
 let ipc_shutdown_function: (() => void) | null = null
 
+const accountsPathExistsP = fsPromises
+  .access(getAccountsPath())
+  .then(() => true)
+  .catch(() => false)
+
 async function onReady([_appReady, _loadedState, _appx, _webxdc_cleanup]: [
   any,
   any,
@@ -179,6 +201,56 @@ async function onReady([_appReady, _loadedState, _appx, _webxdc_cleanup]: [
   // can fail due to user error so running it first is better (cli argument)
   acceptThemeCLI()
   setLanguage(DesktopSettings.state.locale || app.getLocale().split('-')[0]) // can consist of 2 strings like in en-GB
+
+  // Warn users if data exists from a different installation variant
+  // (e.g. Mac App Store vs DMG, or Windows Store APPX vs Setup.exe),
+  // but only when there are no accounts yet in the current location.
+  if (!(await accountsPathExistsP)) {
+    let otherStoreName = 'App Store'
+    let otherAccountsPath: string | undefined
+
+    if (process.platform === 'darwin' && !process.mas) {
+      const { homedir } = await import('os')
+      const sandboxPath = join(
+        homedir(),
+        'Library/Containers/chat.delta.desktop.electron/Data/Library/Application Support/DeltaChat/accounts'
+      )
+      if (existsSync(sandboxPath)) {
+        otherAccountsPath = sandboxPath
+      }
+    } else if (process.platform === 'win32') {
+      const { homedir } = await import('os')
+      const normalPath = join(homedir(), 'AppData/Local/DeltaChat/accounts')
+      const appxPath = join(
+        homedir(),
+        'AppData/Local/Packages/merlinux.DeltaChat_v2ry5hvxhdhyy/LocalCache/Local/DeltaChat/accounts'
+      )
+      const otherPath = appx ? normalPath : appxPath
+      if (existsSync(otherPath)) {
+        // note that it seems per default if data exists in normalPath it will be used by the appx version
+        // but in that case we expect the previous accounts to be used, so this warning will not appear
+        if (appx) {
+          otherStoreName = 'get.delta.chat'
+        }
+        otherAccountsPath = otherPath
+      }
+    }
+
+    if (otherStoreName && otherAccountsPath) {
+      const result = await dialog.showMessageBox({
+        type: 'warning',
+        title: tx('warning'),
+        message: tx('data_found_other_installation_message', otherStoreName),
+        buttons: [tx('perm_continue'), tx('global_menu_file_quit_desktop')],
+        defaultId: 0,
+        cancelId: 1,
+      })
+      if (result.response === 1) {
+        app.quit()
+        return
+      }
+    }
+  }
 
   const cwd = getAccountsPath()
   log.info(`cwd ${cwd}`)
@@ -204,7 +276,7 @@ async function onReady([_appReady, _loadedState, _appx, _webxdc_cleanup]: [
     )
   }
 
-  cleanupLogFolder().catch(err =>
+  cleanupLogFolder(getLogsPath()).catch(err =>
     log.error('Cleanup of old logfiles failed: ', err)
   )
   cleanupDraftTempDir()
@@ -304,25 +376,157 @@ app.on('web-contents-created', (_ev, contents) => {
       WEBXDC_PARTITION_PREFIX satisfies 'webxdc_'
     ) !== -1
   if (is_webxdc) {
-    const webxdcOpenUrl = (url: string) => {
-      if (url.startsWith('mailto:') || url.startsWith('openpgp4fpr:')) {
-        // handle mailto in dc
+    let initialUrl:
+      | { protocol: string; hostname: string; port: string }
+      | undefined
+
+    let linkClickDialogIsOpen = false
+    let userCancelledDialogAtLeastOnce = false
+    let preventOpeningLinkClickDialogs = false
+
+    const webxdcOpenUrl = async (url: string) => {
+      if (shouldHandleLinkInMainApp(url)) {
+        // handle mailto in dc, without any prompt.
+        // Note that such links can also lead to exfiltration,
+        // however this has been regarded as acceptable,
+        // given that the network activity only happens after another dialog:
+        // https://github.com/deltachat/deltachat-desktop/issues/5785#issuecomment-3598142182.
         open_url(url)
         mainWindow.window?.show()
+        return
+      }
+
+      // Note that the app could just `setInterval(() => link.click(), 1)`,
+      // i.e. the user clicking a link is not the only way
+      // to get this code to execute.
+      //
+      // The following basically implements `safeDialogs`:
+      // https://www.electronjs.org/docs/latest/api/browser-window.
+      // Note that here we could have also utilized
+      // the native Electron `safeDialogs` directly,
+      // e.g. with `executeJavaScriptInIsolatedWorld('confirm("open link?")')`.
+      //
+      // TODO fix: we should probably also disallow opening this dialog
+      // when the window is not focused, or otherwise
+      // if there is no "user gesture" that caused the event.
+      if (linkClickDialogIsOpen) {
+        // This is important because otherwise a malicious app
+        // can make the machine unusable until reboot.
+        log.warn(
+          "WebXDC link: a dialog is already open, won't open another one to prevent app from spamming a bunch of them"
+        )
+        return
+      }
+      if (preventOpeningLinkClickDialogs) {
+        // This is important, because otherwise the app could spam the user
+        // until they give up and press "Open",
+        // leading to exfiltration, phishing or whatever, i.e.
+        // this is not only about annoying spam.
+        log.info(
+          'Prevented WebXDC app from opening "Open link?" dialog, as requested by user'
+        )
+        return
+      }
+
+      // This part should not be necessary
+      // because Electron already passes us a URL and not an arbitrary string,
+      // but let's double-check.
+      const parsedUrl = URL.parse(url)
+      if (parsedUrl == null) {
+        log.warn(`open WebXDC link: not a valid URL: ${url} - we'll proceed`)
+      }
+      // `href` is supposed to be an ASCII-string:
+      // https://url.spec.whatwg.org/
+      const asciiUrl = parsedUrl?.href ?? url
+      if (url !== asciiUrl) {
+        log.warn(
+          `open WebXDC link: passed a non-ASCII URL. We'll handle this, but it's not expected. Original: ${url}, ASCII: ${asciiUrl}`
+        )
+      }
+
+      const win = BrowserWindow.fromWebContents(contents)
+      if (win == null) {
+        log.error(
+          'Failed to handle WebXDC link: WebContents is not associated with a Window'
+        )
+        return
+      }
+
+      // Note that this dialog will also be shown for internal `webxdc://` links
+      // that the user Shift / Ctrl + clicked.
+      // There is probably no need to have special handling for that
+      // because maybe there is a reason that the user held Shift or Ctrl,
+      // so let's not be overly smart.
+
+      linkClickDialogIsOpen = true
+      const { response, checkboxChecked } = await dialog.showMessageBox(win, {
+        title: tx('open_url_confirmation'),
+        // TODO this truncates links that are really long.
+        message: tx('open_url_confirmation') + '\n\n' + asciiUrl,
+        type: 'question',
+        buttons: [
+          tx('cancel'),
+          tx('global_menu_edit_copy_desktop'),
+          tx('open'),
+        ],
+        checkboxLabel: userCancelledDialogAtLeastOnce
+          ? tx('prevent_dialog_spam_checkbox')
+          : undefined,
+        defaultId: 0,
+        cancelId: 0,
+      })
+      linkClickDialogIsOpen = false
+
+      preventOpeningLinkClickDialogs = checkboxChecked
+
+      switch (response) {
+        case 0:
+          userCancelledDialogAtLeastOnce = true
+          return
+        case 1: {
+          clipboard.writeText(asciiUrl)
+          break
+        }
+        case 2: {
+          await openExternalWhitelistedOrPromptToCopy(win, url)
+          break
+        }
+        default: {
+          log.error(
+            `Unexpected "Copy Link?" dialog response ${response}. Are there more than 3 buttons?`
+          )
+          return
+        }
       }
     }
 
     contents.on('will-frame-navigate', ev => {
-      if (ev.url.startsWith('webxdc://')) {
+      const navigationUrl = new URL(ev.url)
+      // Note that, as docs say,
+      // https://www.electronjs.org/docs/latest/api/web-contents#event-will-frame-navigate
+      // > This event will not emit when the navigation
+      // > is started programmatically with APIs like `webContents.loadURL`
+      // So we expect this to be the URL that we set with `loadURL()`
+      // when initializing the WebXDC app window.
+      if (initialUrl == undefined) {
+        initialUrl = new URL(contents.getURL())
+      }
+
+      const isSaneWebxdcUrl =
+        navigationUrl.protocol === 'webxdc:' &&
+        navigationUrl.hostname.endsWith('.webxdc') &&
+        navigationUrl.port === ''
+      const isSameOrigin =
+        navigationUrl.protocol === initialUrl.protocol &&
+        navigationUrl.hostname === initialUrl.hostname &&
+        navigationUrl.port === initialUrl.port
+
+      if (isSaneWebxdcUrl && isSameOrigin) {
         // allow internal webxdc nav
         return
-      } else if (ev.url.startsWith('mailto:')) {
-        // handle mailto in dc
+      } else {
         ev.preventDefault()
         webxdcOpenUrl(ev.url)
-      } else {
-        // prevent navigation to unknown scheme
-        ev.preventDefault()
       }
     })
 

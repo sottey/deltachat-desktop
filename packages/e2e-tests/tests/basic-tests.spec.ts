@@ -80,6 +80,24 @@ test('create profiles', async ({ browserName, isChatmail }) => {
   expect(existingProfiles.length).toBe(numberOfProfiles)
 })
 
+test('check "New E-Mail" option presence', async ({ isChatmail }) => {
+  await page.locator('#new-chat-button').click()
+
+  await expect(page.getByRole('button', { name: 'New Group' })).toBeVisible()
+
+  // Since we're on a Chatmail server, this button is not supposed to be shown.
+  const newEmailButton = page.getByRole('button', { name: 'New E-Mail' })
+  if (isChatmail) {
+    await expect(newEmailButton).not.toBeVisible()
+    // Same button, but double-check, by ID.
+    await expect(page.locator('#newemail')).not.toBeVisible({ timeout: 1 })
+  } else {
+    await expect(newEmailButton).toBeVisible()
+  }
+
+  await page.getByRole('dialog').press('Escape')
+})
+
 test('start chat with user', async ({ browserName }) => {
   if (browserName.toLowerCase().indexOf('chrom') > -1) {
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
@@ -234,7 +252,14 @@ test('React to a message', async () => {
   const chatList = page.getByLabel('Chats').getByRole('tablist')
   await expect(chatList).not.toContainText('You reacted')
   await page.getByRole('menuitemradio', { name: '❤️' }).click()
+
   await expect(chatList).toContainText('You reacted ❤️ to "Hello')
+  await someMessage.click()
+  await page.keyboard.press('ControlOrMeta+R')
+  await expect(page.getByRole('menuitemradio', { name: '❤️' })).toBeChecked()
+
+  await page.getByRole('menuitemradio', { name: '❤️' }).click()
+  await expect(chatList).not.toContainText('You reacted')
 })
 
 /**
@@ -395,6 +420,20 @@ test('add app from picker to chat', async () => {
   expect(finalAppIconsCount).toBeGreaterThan(initialAppIconsCount)
 })
 
+test('recent apps context menu', async () => {
+  await page
+    .getByTestId('last-used-apps')
+    .getByRole('button')
+    .first()
+    .click({ button: 'right' })
+
+  await expect(page.getByRole('menu').getByRole('menuitem')).toHaveText([
+    'Show in Chat',
+  ])
+
+  await page.keyboard.press('Escape')
+})
+
 test('focuses first visible item on arrow down key on input in create chat dialog', async () => {
   const userA = existingProfiles[0]
   await switchToProfile(page, userA.id)
@@ -404,6 +443,25 @@ test('focuses first visible item on arrow down key on input in create chat dialo
 
   // check if moved the focus down
   await expect(page.locator('*:focus')).toContainText('New Contact')
+})
+
+test("closing context menu with Escape doesn't close dialog", async () => {
+  await page.keyboard.press('ControlOrMeta+N')
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Bob' })
+    .click({ button: 'right' })
+  await expect(page.getByRole('menuitem')).toHaveText([
+    'View Profile',
+    'Delete Contact',
+  ])
+
+  await expect(page.getByRole('menu')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('menu')).not.toBeVisible()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).not.toBeVisible()
 })
 
 test('correct handling of changed profile displaynames', async () => {

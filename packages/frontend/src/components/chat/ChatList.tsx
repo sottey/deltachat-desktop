@@ -250,10 +250,21 @@ export default function ChatList(props: {
     () => (activeChatId != null ? chatListIds.indexOf(activeChatId) : -1),
     [chatListIds, activeChatId]
   )
+  /**
+   * Can be `false` when `chatListIds` is still loading (it's empty then)
+   * or if we're switching between the "archived" and normal view.
+   */
+  const activeChatIsInList = activeChatIndex !== -1
+  const scrollActiveChatIntoView = useEffectEvent(() => {
+    if (!activeChatIsInList) {
+      return
+    }
+    scrollChatIntoView(activeChatIndex)
+  })
   const lastShowArchivedChatsState = useRef(showArchivedChats)
   const lastQuery = useRef(queryStr)
   // on select chat - scroll to selected chat - chatView
-  // follow chat after loading or when it's position in the chatlist changes
+  // follow chat after loading
   useEffect(() => {
     if (isSearchActive && lastQuery.current !== queryStr) {
       scrollChatIntoView(0)
@@ -262,8 +273,8 @@ export default function ChatList(props: {
       return
     }
     // when showArchivedChats changes, select selected chat if it is archived/not-archived otherwise select first item
-    if (activeChatIndex !== -1) {
-      scrollChatIntoView(activeChatIndex)
+    if (activeChatIsInList) {
+      scrollActiveChatIntoView()
     } else {
       if (lastShowArchivedChatsState.current !== showArchivedChats) {
         scrollChatIntoView(0)
@@ -271,7 +282,8 @@ export default function ChatList(props: {
     }
     lastShowArchivedChatsState.current = showArchivedChats
   }, [
-    activeChatIndex,
+    activeChatId,
+    activeChatIsInList,
     isSearchActive,
     scrollChatIntoView,
     showArchivedChats,
@@ -349,6 +361,13 @@ export default function ChatList(props: {
   // Render --------------------
   const tx = useTranslationFunction()
 
+  let showChatResults = true
+
+  if (chatListIds.length === 0 && queryStr && isInviteLink(queryStr)) {
+    // Don't show "0 chats" when the query is an invite link
+    showChatResults = false
+  }
+
   if (queryChatId) {
     return (
       <SearchInChatResults
@@ -367,7 +386,7 @@ export default function ChatList(props: {
       <AutoSizer disableWidth>
         {({ height }) => (
           <>
-            {isSearchActive && (
+            {isSearchActive && showChatResults && (
               <div
                 id='search-result-divider-chats'
                 className='search-result-divider'
@@ -636,6 +655,19 @@ function ContactAndMessageSearchResults({
       isSingleChatSearch: queryChatId != null, // `false`
     }
   }, [messageResultIds, messageCache, queryStr, queryChatId])
+
+  if (
+    showPseudoListItemAddContactFromInviteLink &&
+    contactIds.length === 0 &&
+    messageResultIds.length === 0
+  ) {
+    return (
+      <PseudoListItemAddContactOrGroupFromInviteLink
+        inviteLink={queryStr!}
+        accountId={accountId}
+      />
+    )
+  }
 
   return (
     <>
@@ -1030,6 +1062,8 @@ function useChatListMultiselect(
     selectedChats,
     useCallback(
       newSelectedChats => {
+        const origSize = newSelectedChats.size
+
         // `chatListIds` might include `C.DC_CHAT_ID_ARCHIVED_LINK`.
         // Let's make sure that only normal chat list items can be selected
         // with multiselect.
@@ -1040,6 +1074,16 @@ function useChatListMultiselect(
         // other weird chat list items.
         for (let i = 0; i <= C.DC_CHAT_ID_LAST_SPECIAL; i++) {
           newSelectedChats.delete(i)
+        }
+
+        const newSelectionOnlyHasSpecialChats =
+          origSize > 0 && newSelectedChats.size === 0
+        if (newSelectionOnlyHasSpecialChats) {
+          // This is so that when you click on "Archived Chats"
+          // and go back to the normal chat list view,
+          // you don't get "0 chats selected".
+          // We want to have the active chat selected instead.
+          return
         }
 
         // TODO perf: to avoid re-renders, maybe store this into a ref,

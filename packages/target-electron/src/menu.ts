@@ -6,10 +6,10 @@ import {
   gitHubIssuesUrl,
   homePageUrl,
   appWindowTitle,
-} from '../../shared/constants.js'
-import { getLogger } from '../../shared/logger.js'
+} from '@deltachat-desktop/shared/constants.js'
+import { getLogger } from '@deltachat-desktop/shared/logger.js'
 import { getLogsPath } from './application-constants.js'
-import { LogHandler } from './log-handler.js'
+import { LogHandler } from '@deltachat-desktop/shared/log-handler.js'
 import * as mainWindow from './windows/main.js'
 import { DesktopSettings } from './desktop_settings.js'
 import { getCurrentLocaleDate, tx } from './load-translations.js'
@@ -291,6 +291,22 @@ export function getHelpMenu(
   }
 }
 
+function getMacWindowMenu(): Electron.MenuItemConstructorOptions {
+  return {
+    // macOS requires a top-level menu item with role:'window' so that native
+    // window management shortcuts (Cmd+M to minimize, fn+Ctrl+Arrow tiling, …)
+    // are routed correctly to the app.
+    label: 'Window',
+    role: 'window',
+    submenu: [
+      { role: 'minimize', accelerator: 'Command+M' },
+      { role: 'zoom' },
+      { type: 'separator' },
+      { role: 'front' },
+    ],
+  }
+}
+
 function getMenuTemplate(
   logHandler: LogHandler
 ): Electron.MenuItemConstructorOptions[] {
@@ -302,11 +318,6 @@ function getMenuTemplate(
     {
       label: tx('global_menu_view_desktop'),
       submenu: [
-        {
-          label: tx('global_menu_view_floatontop_desktop'),
-          type: 'checkbox',
-          click: () => mainWindow.toggleAlwaysOnTop(),
-        },
         {
           accelerator: 'CmdOrCtrl+=',
           label: tx('menu_zoom_in'),
@@ -321,6 +332,23 @@ function getMenuTemplate(
           accelerator: 'CmdOrCtrl+0',
           label: `${tx('reset')}`,
           role: 'resetZoom',
+        },
+        {
+          type: 'separator',
+        },
+        {
+          label: tx('global_menu_view_floatontop_desktop'),
+          type: 'checkbox',
+          click: () => mainWindow.toggleAlwaysOnTop(),
+        },
+        {
+          type: 'separator',
+        },
+        {
+          role: 'togglefullscreen',
+        },
+        {
+          type: 'separator',
         },
         {
           label: tx('pref_language'),
@@ -356,6 +384,7 @@ function getMenuTemplate(
         },
       ],
     },
+    ...(isMac ? [getMacWindowMenu()] : []),
     getHelpMenu(isMac),
   ]
 }

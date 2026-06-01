@@ -7,6 +7,8 @@
   align-items: center;
   margin-top: 3px;
   margin-bottom: -3px;
+  $font-size: 11.5px;
+  $line-height: 16px;
 
   &.with-image-no-caption {
     padding: 4px 10px 1px 10px;
@@ -16,7 +18,8 @@
     font-weight: bold;
 
     .date,
-    .edited {
+    .edited,
+    .viewCount {
       color: white;
     }
 
@@ -59,15 +62,28 @@
   }
 
   .date,
-  .edited {
-    font-size: 11.5px;
-    line-height: 16px;
+  .edited,
+  .viewCount {
+    font-size: $font-size;
+    line-height: $line-height;
     letter-spacing: 0.3px;
     color: var(--messageMetadataDate);
   }
   .edited {
     // Assumes that there is always a date after it.
     margin-inline-end: 0.5ch;
+  }
+  .viewCount {
+    margin-inline-start: 1ch;
+
+    // Reduce content shifting during loading.
+    // Works for two-digit view counts.
+    min-width: 4.5ch;
+    text-align: end;
+    .viewCountValue {
+      min-width: 1.5ch;
+      display: inline-block;
+    }
   }
 
   .spacer {
@@ -76,11 +92,27 @@
 
   .location-icon,
   .email-icon,
+  .saved-message-icon,
+  .viewCountIcon {
+    display: inline-block;
+  }
+  .location-icon,
+  .email-icon,
   .saved-message-icon {
     width: 12px;
     height: 12px;
-    display: inline-block;
     margin-inline-end: 4px;
     margin-bottom: 0px;
+  }
+  .viewCountIcon {
+    @include mixins.color-svg(
+      './images/icons/visibility.svg',
+      currentColor,
+      $line-height
+    );
+    width: $line-height;
+    height: $line-height;
+    // This value doesn't change the height of the wrapper.
+    vertical-align: bottom;
   }
 }

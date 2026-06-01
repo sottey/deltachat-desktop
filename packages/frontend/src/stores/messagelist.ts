@@ -24,9 +24,28 @@ const PAGE_SIZE = 11
 interface MessageListState {
   // chat: Type.FullChat | null
   messageListItems: T.MessageListItem[]
+  /**
+   * Generally this contains a contiguous slice (no with no holes)
+   * of a chat's messages, but we also have `loadMissingMessages`
+   * in case it doesn't.
+   */
   messageCache: { [msgId: number]: T.MessageLoadResult | undefined }
-  newestFetchedMessageListItemIndex: number
-  oldestFetchedMessageListItemIndex: number
+  /**
+   * @see {@linkcode oldestFetchedMessageListItemIndex}
+   */
+  newestFetchedMessageListItemIndex: -1 | number
+  /**
+   * Index in {@linkcode messageListItems} of the oldest message
+   * that we have fetched (i.e. added to {@linkcode messageCache}).
+   *
+   * Yes, this value can be calculated from {@linkcode messageCache}
+   * and is basically a cached value (or duplicate state if you will).
+   *
+   * Might be `-1` when still loading {@linkcode messageCache},
+   * if the chat is empty, and in some other cases.
+   */
+  oldestFetchedMessageListItemIndex: -1 | number
+
   /**
    * This is used as an "event bus". When we need to update the scroll position
    * of the messages list (e.g. `scrollToMessage`), or, instead, keep the
@@ -122,21 +141,37 @@ export function useMessageList(
         }
       }),
       onDCEvent(accountId, 'MsgsChanged', ({ chatId: eventChatId, msgId }) => {
-        if (msgId === 0 && (eventChatId === 0 || eventChatId === chatId)) {
+        if (eventChatId === 0) {
           store.effect.refresh()
-        } else {
-          store.effect.onEventMessagesChanged(msgId)
+          return
         }
+        if (eventChatId !== chatId) {
+          return
+        }
+        if (msgId === 0) {
+          store.effect.refresh()
+          return
+        }
+
+        store.effect.onEventMessagesChanged(msgId)
       }),
       onDCEvent(
         accountId,
         'ReactionsChanged',
         ({ chatId: eventChatId, msgId }) => {
-          if (msgId === 0 && (eventChatId === 0 || eventChatId === chatId)) {
+          if (eventChatId === 0) {
             store.effect.refresh()
-          } else {
-            store.effect.onEventMessagesChanged(msgId)
+            return
           }
+          if (eventChatId !== chatId) {
+            return
+          }
+          if (msgId === 0) {
+            store.effect.refresh()
+            return
+          }
+
+          store.effect.onEventMessagesChanged(msgId)
         }
       ),
       onDCEvent(accountId, 'MsgFailed', ({ chatId: eventChatId, msgId }) => {
@@ -324,24 +359,19 @@ export class MessageListStore extends Store<MessageListState> {
     },
     setMessageState: (messageId: number, messageState: number) => {
       if (this.state.messageCache[messageId] == undefined) {
-        // This may happen when sending a message to "Saved Messages"
+        // Normally this can happen when a message state changes
+        // for a pretty old message which is not in view.
+        // This also happens for "edit request" messages
+        // and WebXDC sendUpdate.
+        // Those are actual messages, but we don't render them
+        //
+        // Also this may happen when sending a message to "Saved Messages"
         // on a new Chatmail account, where `MsgDelivered` would fire
         // almost instantly after the send, even before `jumpToMessage`
         // finishes for the new message.
-        // This results in jumpToMessage thinking that the message
-        // is already loaded, but in fact it would be just a husk
-        // of a Message object, with only the `state` property present.
-        //
-        // TODO should we handle it differently? Should we
-        // schedule a full message list re-fetch, or would it always
-        // be loaded later by other event listeners?
-        //
-        // TODO refactor: this warning triggers for "edit request" messages.
-        // Those are actual messages, but we don't render them
-        this.log.warn(
+        this.log.info(
           `setMessageState called for message ${messageId}, ` +
-            `state ${messageState}, but it's not loaded. ` +
-            "Ignoring, in hopes that we'll automatically load it later."
+            `state ${messageState}, but it's not loaded`
         )
         return
       }
@@ -554,11 +584,10 @@ export class MessageListStore extends Store<MessageListState> {
             state.oldestFetchedMessageListItemIndex - PAGE_SIZE,
             0
           )
-          const lastMessageIndexOnLastPage =
-            state.oldestFetchedMessageListItemIndex
-          if (lastMessageIndexOnLastPage === 0) {
+          const lastMessageIndex = state.oldestFetchedMessageListItemIndex
+          if (lastMessageIndex === 0) {
             this.log.debug(
-              'FETCH_MORE_MESSAGES: lastMessageIndexOnLastPage is zero, returning'
+              'FETCH_MORE_MESSAGES: lastMessageIndex is zero, returning'
             )
             // Since we haven't changed `viewState`, `MessageList` won't
             // call `unlockScroll()`, so let's unlock it now.
@@ -566,7 +595,7 @@ export class MessageListStore extends Store<MessageListState> {
           }
           const fetchedMessageListItems = state.messageListItems.slice(
             oldestFetchedMessageListItemIndex,
-            lastMessageIndexOnLastPage
+            lastMessageIndex
           )
           if (fetchedMessageListItems.length === 0) {
             this.log.debug(
@@ -582,7 +611,7 @@ export class MessageListStore extends Store<MessageListState> {
               this.accountId,
               state.messageListItems,
               oldestFetchedMessageListItemIndex,
-              lastMessageIndexOnLastPage - 1
+              lastMessageIndex - 1
             ).catch(err => this.log.error('loadMessages failed', err))) || {}
 
           this.reducer.appendMessagesTop({
@@ -707,74 +736,19 @@ export class MessageListStore extends Store<MessageListState> {
         false,
         true
       )
-      let indexEnd = -1
-      const last_item: Type.MessageListItem | undefined =
-        this.state.messageListItems[this.state.messageListItems.length - 1]
-
-      let indexStart =
-        last_item === undefined
-          ? -1
-          : messageListItems.findIndex(item => {
-              if (last_item.kind !== item.kind) {
-                return false
-              } else {
-                if (item.kind === 'message') {
-                  return item.msg_id === (last_item as any).msg_id
-                } else {
-                  return item.timestamp === (last_item as any).timestamp
-                }
-              }
-            })
-
-      // check if there is an intersection
-      if (indexStart !== -1 && messageListItems[indexStart + 1]) {
-        indexStart = indexStart + 1
-      }
-
-      // if index start is not the end set, then set the end to the end
-      if (indexStart !== messageListItems.length - 1) {
-        indexEnd = messageListItems.length - 1
-      } else {
-        indexEnd = indexStart
-      }
-
-      // Only add incoming messages if we could append them directly to messagePages without having a hole
-      if (
-        this.state.newestFetchedMessageListItemIndex !== -1 &&
-        indexStart !== this.state.newestFetchedMessageListItemIndex + 1
-      ) {
-        this.log.debug(
-          `onEventIncomingMessage: new incoming messages cannot added to state without having a hole (indexStart: ${indexStart}, newestFetchedMessageListItemIndex ${this.state.newestFetchedMessageListItemIndex}), returning`
-        )
-        this.reducer.setMessageListItems(messageListItems)
-        return
-      }
-
-      const newMessageCacheItems =
-        (await loadMessages(
-          this.accountId,
-          messageListItems,
-          indexStart,
-          indexEnd
-        ).catch(err => this.log.error('loadMessages failed', err))) || {}
-
-      this.reducer.fetchedIncomingMessages({
-        messageListItems,
-        newMessageCacheItems,
-        newestFetchedMessageIndex: indexEnd,
-      })
+      await this.__appendNewMessages(messageListItems)
     }, 'onEventIncomingMessage'),
     onEventMessagesChanged: this.scheduler.queuedEffect(
       async (messageId: number) => {
         if (
           messageId > C.DC_MSG_ID_LAST_SPECIAL &&
-          this.state.messageListItems.findIndex(
+          this.state.messageListItems.some(
             m => m.kind === 'message' && m.msg_id === messageId
-          ) !== -1
+          )
         ) {
           this.log.debug(
             'DC_EVENT_MSGS_CHANGED',
-            'changed message seems to be message we already know'
+            'changed message seems to be a message we already know'
           )
           try {
             const message = await BackendRemote.rpc.getMessage(
@@ -817,11 +791,81 @@ export class MessageListStore extends Store<MessageListState> {
             false,
             true
           )
-          this.reducer.setMessageListItems(messageListItems)
+
+          // Some "new" messages don't trigger `IncomingMsg` but only
+          // `MsgsChanged` — e.g. info messages from the current user's actions
+          // (changing the group name, disappearing messages etc.) or
+          // IncomingCall messages. Treat them the same as incoming messages so
+          // the list scrolls to bottom when the user is already there.
+          await this.__appendNewMessages(messageListItems)
         }
       },
       'onEventMessagesChanged'
     ),
+  }
+
+  /**
+   * Appends new messages to the store and updates the scroll position
+   * if needed.
+   *
+   * @param messageListItems
+   * @returns
+   */
+  private async __appendNewMessages(messageListItems: T.MessageListItem[]) {
+    const last_item: Type.MessageListItem | undefined =
+      this.state.messageListItems[this.state.messageListItems.length - 1]
+
+    let indexStart =
+      last_item === undefined
+        ? -1
+        : messageListItems.findIndex(item => {
+            if (last_item.kind !== item.kind) {
+              return false
+            } else {
+              if (item.kind === 'message') {
+                return item.msg_id === (last_item as any).msg_id
+              } else {
+                return item.timestamp === (last_item as any).timestamp
+              }
+            }
+          })
+
+    // check if there is an intersection
+    if (indexStart !== -1 && messageListItems[indexStart + 1]) {
+      indexStart = indexStart + 1
+    }
+
+    // if index start is not the end, set the end to the last item
+    const indexEnd =
+      indexStart !== messageListItems.length - 1
+        ? messageListItems.length - 1
+        : indexStart
+
+    // Only append if we can do so without leaving a hole
+    if (
+      this.state.newestFetchedMessageListItemIndex !== -1 &&
+      indexStart !== this.state.newestFetchedMessageListItemIndex + 1
+    ) {
+      this.log.debug(
+        `__appendNewMessages: new messages cannot be added to state without having a hole (indexStart: ${indexStart}, newestFetchedMessageListItemIndex ${this.state.newestFetchedMessageListItemIndex}), falling back to setMessageListItems`
+      )
+      this.reducer.setMessageListItems(messageListItems)
+      return
+    }
+
+    const newMessageCacheItems =
+      (await loadMessages(
+        this.accountId,
+        messageListItems,
+        indexStart,
+        indexEnd
+      ).catch(err => this.log.error('loadMessages failed', err))) || {}
+
+    this.reducer.fetchedIncomingMessages({
+      messageListItems,
+      newMessageCacheItems,
+      newestFetchedMessageIndex: indexEnd,
+    })
   }
 
   /**

@@ -141,7 +141,7 @@ class TauriRuntime implements Runtime {
     isContactRequest: boolean,
     subject: string,
     sender: string,
-    receiveTime: string,
+    sentTime: string,
     content: string
   ): void {
     invoke('open_html_window', {
@@ -150,7 +150,7 @@ class TauriRuntime implements Runtime {
       isContactRequest,
       subject,
       sender,
-      receiveTime,
+      sentTime,
       content,
     })
   }
@@ -166,6 +166,7 @@ class TauriRuntime implements Runtime {
       ...deprecated,
       bounds: {}, // managed by tauri_plugin_window_state plugin
       HTMLEmailWindowBounds: undefined, // managed by tauri_plugin_window_state plugin
+      autostartElectron: false, // not needed in tauri version
     } satisfies Partial<DesktopSettingsType>
 
     const frontendAndTauri = {
@@ -186,8 +187,6 @@ class TauriRuntime implements Runtime {
     const frontendOnly = {
       showNotificationContent: true,
       enterKeySends: false,
-      enableAVCallsV2: false,
-      enableBroadcastLists: false,
       enableOnDemandLocationStreaming: false,
       chatViewBgImg: undefined,
       galleryImageKeepAspectRatio: false,
@@ -484,6 +483,9 @@ class TauriRuntime implements Runtime {
     }
     return ''
   }
+  deleteSticker(_stickerPath: string): Promise<void> {
+    throw new Error('Method not implemented.103')
+  }
   readClipboardText(): Promise<string> {
     return readText()
   }
@@ -554,6 +556,9 @@ class TauriRuntime implements Runtime {
   startOutgoingVideoCall(): void {
     throw new Error('Method not implemented.101')
   }
+  async openIncomingVideoCallWindow() {
+    throw new Error('Method not implemented.102')
+  }
   restartApp(): void {
     // will not be implemented in tauri for now, as this method is currently unused
     this.log.error('Method not implemented: restartApp')
@@ -578,7 +583,12 @@ class TauriRuntime implements Runtime {
         value === 0 ? undefined : 'images/tray/unread-badge.png'
       )
     }
-    window.setTitle(`Delta Chat Tauri${value === 0 ? '' : ` (${value})`}`)
+
+    // On macOS title bar is in `Overlay` mode and title is set to "",
+    // adding the title bar on macOS would interfere with other UI elements.
+    if (!this.getRuntimeInfo().isMac) {
+      window.setTitle(`Delta Chat Tauri${value === 0 ? '' : ` (${value})`}`)
+    }
 
     invoke('update_tray_icon_badge', { counter: value })
   }
@@ -675,7 +685,9 @@ class TauriRuntime implements Runtime {
   setDropListener(onDrop: DropListener | null) {
     this.onDrop = onDrop
   }
-  onDragFileOut(fileName: string): void {
+  // TODO: implement handling of second parameter with real file name
+  onDragFileOut(fileName: string, realName: string | null): void {
+    this.log.debug('onDragFileOut', { fileName, realName })
     this.lastDragOutFile = fileName
     invoke('drag_file_out', { fileName })
   }

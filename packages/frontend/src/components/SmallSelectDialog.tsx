@@ -23,9 +23,15 @@ type Props = {
   onSave?: (selectedValue: string) => void
   onSelect?: (selectedValue: string) => void
   onCancel?: () => void
-} & DialogProps
+} & DialogProps & {
+    /**
+     * Will be inserted after the radio buttons.
+     */
+    children?: React.PropsWithChildren['children']
+  }
 
 export default function SmallSelectDialog({
+  children,
   initialSelectedValue,
   values,
   onSave,
@@ -59,13 +65,12 @@ export default function SmallSelectDialog({
             selectedValue={selectedValue}
             name='small-dialog-value'
           >
-            {values.map((element, index) => {
+            {values.map(element => {
               const [value, label] = element
-              return (
-                <Radio key={'select-' + index} label={label} value={value} />
-              )
+              return <Radio key={value} label={label} value={value} />
             })}
           </RadioGroup>
+          {children}
         </DialogContent>
       </DialogBody>
       <DialogFooter>

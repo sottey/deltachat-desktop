@@ -1,14 +1,8 @@
-/* eslint-disable no-console */
-import path from 'node:path'
 import { expect, test as base, Page } from '@playwright/test'
+import path from 'path'
+import { loadEnv } from './load-env'
 
-const envPath = path.join(import.meta.dirname, '.env')
-
-try {
-  process.loadEnvFile?.(envPath)
-} catch (_error) {
-  console.log(`No .env file to load ${envPath}`)
-}
+loadEnv()
 
 export const chatmailServerDomain = process.env.DC_CHATMAIL_DOMAIN
   ? process.env.DC_CHATMAIL_DOMAIN
@@ -43,8 +37,10 @@ export const test = base.extend<TestOptions>({
   isChatmail: [true, { option: true }],
 })
 
+const fixturesPath = path.join(import.meta.dirname, 'fixtures')
+
 export async function reloadPage(page: Page): Promise<void> {
-  await page.goto('https://localhost:3000/')
+  await page.goto(`/`)
 }
 
 export async function clickThroughTestIds(
@@ -236,6 +232,21 @@ export async function createNewProfile(
   }
 }
 
+/**
+ * Assumes that the "Add Profile" dialog is already open
+ * (which is the case if there are no accounts).
+ */
+export async function importDummyProfileFromBackup(page: Page) {
+  await page.getByRole('button', { name: 'I Already Have a Profile' }).click()
+
+  const fileChooserPromise = page.waitForEvent('filechooser')
+  await page.getByRole('button', { name: 'Restore from Backup' }).click()
+  const fileChooser = await fileChooserPromise
+  await fileChooser.setFiles(
+    path.join(fixturesPath, 'dummy-account-backup.tar')
+  )
+}
+
 export async function getProfile(
   page: Page,
   accountId: string,
@@ -325,7 +336,7 @@ export async function deleteAllProfiles(
  * if fixtures are used, and the profiles are already created
  */
 export async function loadExistingProfiles(page: Page): Promise<User[]> {
-  // await page.goto('https://localhost:3000/')
+  // await page.goto('/')
   const existingProfiles: User[] = []
   await page.waitForSelector('.main-container')
   await expect(page.locator('.main-container')).toBeVisible()
@@ -398,11 +409,33 @@ export async function deleteProfile(
   return null
 }
 
+export async function deleteSelectedProfile(page: Page) {
+  const selectedProfile = page
+    .getByRole('navigation', { name: /Profiles?/ })
+    .getByRole('tab', { selected: true })
+  await selectedProfile.click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Delete' }).click()
+  await page
+    .getByRole('dialog')
+    .filter({ hasText: 'Delete Profile' })
+    .getByRole('button', { name: 'Delete' })
+    .click()
+  await expect(selectedProfile).not.toBeVisible()
+}
+
 export async function createDummyChat(page: Page, chatName: string) {
   await page.getByRole('button', { name: 'New Chat' }).click()
   await page.getByRole('button', { name: 'New Group' }).click()
   await page.getByRole('textbox', { name: 'Group Name' }).fill(chatName)
   await page.getByTestId('group-create-button').click()
+}
+export async function deleteChat(page: Page, chatName: string | RegExp) {
+  await page
+    .getByLabel('Chats')
+    .getByRole('tab', { name: chatName })
+    .click({ button: 'right' })
+  await page.getByRole('menuitem', { name: /.*(Delete|Leave).*/ }).click()
+  await page.getByRole('button', { name: 'Delete' }).click()
 }
 export async function createNDummyChats(
   page: Page,
@@ -541,6 +574,7 @@ export const createGroupChat = async (
   await page.locator('#new-chat-button').click()
   await page.locator('#newgroup button').click()
   await page.locator('.group-name-input').fill(groupName)
+  await page.getByPlaceholder('Description').fill('Test group description')
   await page.locator('#addmember button').click()
   const addMemberDialog = page.getByTestId('add-member-dialog')
   await page

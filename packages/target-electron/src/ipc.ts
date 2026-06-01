@@ -20,34 +20,40 @@ import path, {
 } from 'path'
 import { inspect } from 'util'
 import { platform } from 'os'
-import { existsSync } from 'fs'
+import { existsSync, copyFileSync, mkdirSync, linkSync } from 'fs'
 import { versions } from 'process'
 import { fileURLToPath } from 'url'
 
-import { getLogger } from '../../shared/logger.js'
+import { getLogger } from '@deltachat-desktop/shared/logger.js'
 import {
-  getDraftTempDir,
+  getTempDir,
+  getAccountsPath,
   getLogsPath,
   htmlDistDir,
   INTERNAL_TMP_DIR_NAME,
 } from './application-constants.js'
-import { LogHandler } from './log-handler.js'
+import { LogHandler } from '@deltachat-desktop/shared/log-handler.js'
 import { ExtendedAppMainProcess } from './types.js'
 import * as mainWindow from './windows/main.js'
 import { openHelpWindow } from './windows/help.js'
 import { DesktopSettings } from './desktop_settings.js'
 import { getConfigPath } from './application-constants.js'
-import { DesktopSettingsType, RuntimeInfo } from '../../shared/shared-types.js'
+import {
+  DesktopSettingsType,
+  RuntimeInfo,
+} from '@deltachat-desktop/shared/shared-types.js'
 import { set_has_unread, updateTrayIcon } from './tray.js'
 import { openHtmlEmailWindow } from './windows/html_email.js'
 import { appx, mapPackagePath } from './isAppx.js'
 import DeltaChatController from './deltachat/controller.js'
 import { BuildInfo } from './get-build-info.js'
 import { updateContentProtectionOnAllActiveWindows } from './content-protection.js'
-import { MediaType } from '@deltachat-desktop/runtime-interface'
+import { MediaType, type Runtime } from '@deltachat-desktop/runtime-interface'
+import { applyAutostart, getAutostartState } from './autostart.js'
 import {
   startHandlingIncomingVideoCalls,
   startOutgoingVideoCall,
+  openIncomingVideoCallWindow,
 } from './windows/video-call.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -60,6 +66,10 @@ let dcController: typeof DeltaChatController.prototype
 export function getDCJsonrpcRemote() {
   return dcController.jsonrpcRemote
 }
+let onInitialized: (val: DeltaChatController['jsonrpcRemote']) => void
+export const DCJsonrpcRemoteInitializedP = new Promise<
+  DeltaChatController['jsonrpcRemote']
+>(r => (onInitialized = r))
 
 /** returns shutdown function */
 export async function init(cwd: string, logHandler: LogHandler) {
@@ -105,7 +115,19 @@ export async function init(cwd: string, logHandler: LogHandler) {
     logHandler.log(channel, level, stacktrace, ...args)
   )
 
-  ipcMain.on('ondragstart', (event, filePath) => {
+  ipcMain.on('ondragstart', (event, filePath, realName) => {
+    let tmpFilePath = filePath
+    let tmpDir: string | undefined
+    if (realName && realName !== '') {
+      tmpDir = join(getTempDir(), `drag-${Date.now()}`)
+      mkdirSync(tmpDir, { recursive: true })
+      tmpFilePath = join(tmpDir, basename(realName))
+      try {
+        linkSync(filePath, tmpFilePath)
+      } catch {
+        copyFileSync(filePath, tmpFilePath)
+      }
+    }
     let icon: NativeImage
     try {
       icon = nativeImage.createFromPath(
@@ -129,9 +151,17 @@ export async function init(cwd: string, logHandler: LogHandler) {
     }
 
     event.sender.startDrag({
-      file: filePath,
+      file: tmpFilePath,
       icon,
     })
+    if (tmpDir) {
+      const dirToRemove = tmpDir
+      setTimeout(() => {
+        rm(dirToRemove, { recursive: true }).catch(err =>
+          log.debug('drag tmp dir cleanup: already removed or failed', err)
+        )
+      }, 30_000)
+    }
   })
 
   ipcMain.on('help', async (_ev, locale, anchor?: string) => {
@@ -276,7 +306,7 @@ export async function init(cwd: string, logHandler: LogHandler) {
 
   ipcMain.handle(
     'set-desktop-setting',
-    (
+    async (
       _ev,
       key: keyof DesktopSettingsType,
       value: string | number | boolean | undefined
@@ -287,11 +317,21 @@ export async function init(cwd: string, logHandler: LogHandler) {
         updateTrayIcon()
       } else if (key === 'contentProtectionEnabled') {
         updateContentProtectionOnAllActiveWindows(Boolean(value))
+      } else if (key === 'autostartElectron') {
+        try {
+          await applyAutostart(Boolean(value))
+        } catch (error) {
+          log.error('Failed to apply autostart setting', error)
+        }
       }
 
       return true
     }
   )
+
+  ipcMain.handle('get-autostart-state', () => {
+    return getAutostartState()
+  })
 
   ipcMain.handle(
     'app.setBadgeCountAndTrayIconIndicator',
@@ -311,6 +351,7 @@ export async function init(cwd: string, logHandler: LogHandler) {
     return copyFileToInternalTmpDir(name, pathToFile)
   })
   ipcMain.handle('app.removeTempFile', (_ev, path) => removeTempFile(path))
+  ipcMain.handle('app.deleteSticker', (_ev, path) => deleteSticker(path))
 
   ipcMain.handle('electron.shell.openExternal', (_ev, url) =>
     shell.openExternal(url)
@@ -372,7 +413,7 @@ export async function init(cwd: string, logHandler: LogHandler) {
       isContactRequest: boolean,
       subject: string,
       sender: string,
-      receiveTime: string,
+      sentTime: string,
       content: string
     ) => {
       openHtmlEmailWindow(
@@ -381,7 +422,7 @@ export async function init(cwd: string, logHandler: LogHandler) {
         isContactRequest,
         subject,
         sender,
-        receiveTime,
+        sentTime,
         content
       )
     }
@@ -389,14 +430,26 @@ export async function init(cwd: string, logHandler: LogHandler) {
 
   ipcMain.handle(
     'startOutgoingVideoCall',
-    (_ev, accountId: number, chatId: number) => {
-      startOutgoingVideoCall(accountId, chatId)
+    (
+      _ev,
+      accountId: number,
+      chatId: number,
+      param: { startWithCameraEnabled: boolean }
+    ) => {
+      startOutgoingVideoCall(accountId, chatId, param)
+    }
+  )
+  ipcMain.handle(
+    'openIncomingVideoCallWindow',
+    (_ev, ...args: Parameters<Runtime['openIncomingVideoCallWindow']>) => {
+      openIncomingVideoCallWindow(...args)
     }
   )
   const stopHandlingIncomingVideoCalls = startHandlingIncomingVideoCalls(
     dcController.jsonrpcRemote
   )
 
+  onInitialized(dcController.jsonrpcRemote)
   // the shutdown function
   return () => {
     stopHandlingIncomingVideoCalls()
@@ -408,8 +461,8 @@ export async function writeTempFileFromBase64(
   name: string,
   content: string
 ): Promise<string> {
-  await mkdir(getDraftTempDir(), { recursive: true })
-  const pathToFile = join(getDraftTempDir(), basename(name))
+  await mkdir(getTempDir(), { recursive: true })
+  const pathToFile = join(getTempDir(), basename(name))
   log.debug(`Writing base64 encoded file ${pathToFile}`)
   await writeFile(pathToFile, Buffer.from(content, 'base64'), 'binary')
   return pathToFile
@@ -426,8 +479,8 @@ export async function writeTempFile(
   name: string,
   content: string
 ): Promise<string> {
-  await mkdir(getDraftTempDir(), { recursive: true })
-  const pathToFile = join(getDraftTempDir(), basename(name))
+  await mkdir(getTempDir(), { recursive: true })
+  const pathToFile = join(getTempDir(), basename(name))
   log.debug(`Writing tmp file ${pathToFile}`)
   await writeFile(pathToFile, Buffer.from(content, 'utf8'), 'binary')
   return pathToFile
@@ -465,4 +518,20 @@ async function removeTempFile(path: string) {
     throw new Error('Path is outside of the temp folder')
   }
   await rm(path)
+}
+
+async function deleteSticker(stickerPath: string) {
+  const resolved = normalize(stickerPath)
+  const accountsPath = getAccountsPath()
+  if (
+    !resolved.startsWith(accountsPath + sep) ||
+    !resolved.includes('stickers')
+  ) {
+    log.error(
+      'deleteSticker was called with a path outside of the accounts dir: ',
+      stickerPath
+    )
+    throw new Error('Invalid sticker path')
+  }
+  await shell.trashItem(resolved)
 }

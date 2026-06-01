@@ -16,7 +16,7 @@ import useDialog from '../../hooks/dialog/useDialog'
 import type { DialogProps } from '../../contexts/DialogContext'
 import AlertDialog from './AlertDialog'
 import { T } from '@deltachat/jsonrpc-client'
-import { useSettingsStore } from '../../stores/settings'
+import SettingsStoreInstance, { useSettingsStore } from '../../stores/settings'
 import { getLogger } from '@deltachat-desktop/shared/logger'
 
 type AccountAndPasswordDialogProps = DialogProps & {
@@ -45,50 +45,82 @@ export default function EditAccountAndPasswordDialog({
           isChatmail ? tx('edit_transport') : tx('manual_account_setup_option')
         }
       />
-      {EditAccountInner(onClose, addr)}
+      <EditAccountInner {...{ onClose, addr }} />
     </Dialog>
   )
 }
 
-function EditAccountInner(onClose: DialogProps['onClose'], addr?: string) {
+function EditAccountInner({
+  onClose,
+  addr,
+}: {
+  onClose: DialogProps['onClose']
+  addr?: string
+}) {
+  const settingsStore = useSettingsStore()[0]
   const [initialSettings, setInitialAccountSettings] =
     useState<Credentials>(defaultCredentials())
 
   const [accountSettings, setAccountSettings] =
     useState<Credentials>(defaultCredentials())
+  const [forceEncryption, setForceEncryption] = useState<boolean>(
+    settingsStore?.settings['force_encryption'] === '1'
+  )
 
   const { openDialog } = useDialog()
   const tx = useTranslationFunction()
 
-  const loadSettings = async () => {
-    if (window.__selectedAccountId === undefined) {
-      throw new Error('can not load settings when no account is selected')
-    }
-    const accountId = window.__selectedAccountId
-    const transports = await BackendRemote.rpc.listTransports(accountId)
-    if (transports.length === 0) {
-      throw new Error('no transport found')
-    }
-    const configuredAddress =
-      addr || (await BackendRemote.rpc.getConfig(accountId, 'configured_addr'))
-    const accountSettings: T.EnteredLoginParam | undefined = transports.find(
-      t => t.addr === configuredAddress
-    )
-
-    if (!accountSettings) {
-      throw new Error('configured transport not found in transport list')
-    }
-
-    setInitialAccountSettings(accountSettings)
-    setAccountSettings(accountSettings)
-  }
-
   useEffect(() => {
-    loadSettings()
-  }, [])
+    let cancelled = false
+
+    const loadSettings = async () => {
+      if (window.__selectedAccountId === undefined) {
+        throw new Error('can not load settings when no account is selected')
+      }
+      const accountId = window.__selectedAccountId
+      const transports = await BackendRemote.rpc.listTransports(accountId)
+      if (cancelled) return
+      if (transports.length === 0) {
+        throw new Error('no transport found')
+      }
+      const configuredAddress =
+        addr ||
+        (await BackendRemote.rpc.getConfig(accountId, 'configured_addr'))
+      if (cancelled) return
+      const accountSettings: T.EnteredLoginParam | undefined = transports.find(
+        t => t.addr === configuredAddress
+      )
+
+      if (!accountSettings) {
+        throw new Error('configured transport not found in transport list')
+      }
+
+      setInitialAccountSettings(accountSettings)
+      setAccountSettings(accountSettings)
+    }
+
+    loadSettings().catch(error => {
+      log.error('Failed to load settings:', error)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [addr])
 
   const onUpdate = useCallback(async () => {
-    const onSuccess = () => onClose()
+    const onSuccess = async () => {
+      const forceEncryptionValue = forceEncryption ? '1' : '0'
+      if (
+        settingsStore?.settings['force_encryption'] !== forceEncryptionValue
+      ) {
+        await SettingsStoreInstance.effect.setCoreSetting(
+          'force_encryption',
+          forceEncryptionValue
+        )
+      }
+      onClose()
+    }
 
     const update = () => {
       openDialog(ConfigureProgressDialog, {
@@ -104,8 +136,16 @@ function EditAccountInner(onClose: DialogProps['onClose'], addr?: string) {
       log.error('changing email addres of transport is not allowed')
       return
     }
+
     update()
-  }, [accountSettings, initialSettings, onClose, openDialog])
+  }, [
+    accountSettings,
+    forceEncryption,
+    initialSettings,
+    onClose,
+    openDialog,
+    settingsStore,
+  ])
 
   const onOk = useCallback(async () => {
     await onUpdate()
@@ -120,6 +160,8 @@ function EditAccountInner(onClose: DialogProps['onClose'], addr?: string) {
             <LoginForm
               credentials={accountSettings}
               setCredentials={setAccountSettings}
+              forceEncryption={forceEncryption}
+              setForceEncryption={setForceEncryption}
               isEdit
             />
           )}

@@ -103,7 +103,7 @@ export default function ViewProfile(
               onClick={onClickViewProfileMenu}
               icon='more_vert'
               iconSize={24}
-              aria-label='Profile Menu'
+              aria-label={tx('menu_more_options')}
             />
           </>
         )}
@@ -295,7 +295,7 @@ export function ViewProfileInner({
             {contact.isBlocked && (
               <div>
                 <i className='material-svg-icon material-icon-blocked' />
-                {tx('contact_is_blocked')}
+                {tx('contact_blocked')}
               </div>
             )}
           </div>
@@ -355,6 +355,7 @@ export function ViewProfileInner({
             <div className={styles.contactAttributesBottom}>
               {verifier && (
                 <VerificationTag
+                  type='button'
                   className={styles.verification}
                   onClick={verifier.action}
                   style={{ display: 'flex' }}

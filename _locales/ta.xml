@@ -26,6 +26,7 @@
     <string name="archive">காப்பகத்தை</string>
     <!-- Verb "to unarchive", as in "remove a chat from the archive", opposite of the previous string -->
     <string name="unarchive">மீட்டெடுக்கலாம்</string>
+    <!-- Verb "to mute". used to mute a chat, so that it is silenced e.g. does not make noise or cause notifications -->
     <string name="mute">ஓசையற்ற</string>
     <string name="ephemeral_messages">காணாமல் போகும் செய்திகள்</string>
     <string name="save">சேமி</string>
@@ -78,6 +79,7 @@
     <string name="image">படம்</string>
     <string name="gif">GIF</string>
     <string name="images">புகைப்படங்கள்</string>
+    <!-- a noun, used for "Music" and other "Audio" files -->
     <string name="audio">ஒலி</string>
     <string name="voice_message">குரல் செய்தி</string>
     <string name="forwarded_message">மேல அனுப்பப்பட்ட சேதி</string>
@@ -138,12 +140,14 @@
     <string name="mute_for_seven_days">7 நாட்கள் இதற்காக ஊமையாக்கு</string>
     <string name="mute_forever">எப்போதுமே ஊமையாக்கு</string>
 
+    <!-- deprecated -->
     <string name="share_location_for_5_minutes">5 நிமிடங்கள் </string>
+
     <string name="share_location_for_30_minutes">30 நிமிடங்கள் </string>
     <string name="share_location_for_one_hour">1 மணி</string>
     <string name="share_location_for_two_hours">2 மணிகள்</string>
     <string name="share_location_for_six_hours">6 மணிகள்</string>
-
+    <!-- deprecated, use ask_forward_messages -->
     <string name="ask_forward">தேர்வு செய்யப்பட்ட செய்திகளை இவற்றுக்கு %1$s முன்னோக்கி அனுப்பவா ?</string>
     <string name="ask_block_contact">இந்த தொடர்பை முடக்கவா ?</string>
     <!-- contact list -->
@@ -164,6 +168,7 @@
     <string name="search">தேடு</string>
     <!-- create/edit groups, contact/group profile -->
     <string name="group_name">குழுவின் பெயர்</string>
+    <!-- deprecated, use please_enter_chat_name -->
     <string name="group_please_enter_group_name">குழுவிற்கு ஒரு பெயரை சூட்டவும்</string>
     <string name="group_add_members">உறுப்பினர்களை சேர்க்க</string>
     <string name="profile_encryption">மறைகுறியாக்கம்</string>
@@ -175,9 +180,11 @@
     <string name="login_smtp_password">SMTP க்கான கடவுச்சொல்</string>
     <string name="login_smtp_server">SMTP க்கான சேவகன்</string>
     <string name="login_smtp_port">SMTP போர்ட்</string>
+    <!-- preferences -->
     <string name="pref_profile_info_headline">உங்கள் சுயவிவரத் தகவல்</string>
     <string name="pref_blocked_contacts">தடுக்கபட்ட தொடர்புகள்</string>
     <string name="pref_your_name">எனது பெயர்</string>
+    <!-- Option name for changing behaviour of the "Enter key" to sending out a message directly (instead of adding new line). If in doubt, please refer to a similar option in other messengers. -->
     <string name="pref_enter_sends">\"enter\" மூலம் அனுப்பவும்</string>
     <string name="pref_vibrate">அதிர்வு உண்டாக்கு</string>
     <string name="pref_screen_security">திரை பாதுகாப்பு</string>
@@ -190,8 +197,6 @@
     <string name="pref_sound">ஓசை</string>
     <string name="pref_silent">அமைதி</string>
     <string name="pref_privacy">தனியுரிமை</string>
-    <!-- deprecated, use pref_chats -->
-    <string name="pref_chats_and_media">அரட்டைகள் மற்றும் ஊடகங்கள்</string>
     <string name="pref_system_default">கருவி இயல்புநிலை</string>
     <!-- Translators: as in "opposite of dark" -->
     <string name="pref_light_theme">வெளிச்சமிக்க</string>
@@ -213,7 +218,7 @@
     <!-- %1$s will be replaced by name of the contact removed from the group; this string is used when it's unclear who did the action -->
     <string name="member_x_removed">உறுப்பினர் %1$s நீக்கப்பட்டார்</string>
     <string name="qrscan_fingerprint_label">கைரேகைகள்</string>
-    <!-- notifications  -->
+    <!-- notifications -->
     <string name="notify_reply_button">மறுமொழி</string>
     <string name="notify_new_message">புதிய செய்தி</string>
     <string name="notify_priority_high">உயர்</string>

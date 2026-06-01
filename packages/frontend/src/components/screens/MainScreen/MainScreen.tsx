@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useContext,
   useMemo,
+  useId,
 } from 'react'
 import { C } from '@deltachat/jsonrpc-client'
 
@@ -43,6 +44,11 @@ import asyncThrottle from '@jcoreio/async-throttle'
 import { useFetch, useRpcFetch } from '../../../hooks/useFetch'
 import { getLogger } from '@deltachat-desktop/shared/logger'
 import { useChatContextMenu } from '../../chat/ChatContextMenu'
+import useContextMenu from '../../../hooks/useContextMenu'
+import { GlobalVoiceMessagePlayer } from '../../GlobalVoiceMessagePlayer/GlobalVoiceMessagePlayer'
+import { ContextMenuContext } from '../../../contexts/ContextMenuContext'
+import { mouseEventToPosition } from '../../../utils/mouseEventToPosition'
+import useMessage from '../../../hooks/chat/useMessage'
 
 const log = getLogger('MainScreen')
 
@@ -311,10 +317,25 @@ export default function MainScreen({ accountId }: Props) {
     })
   }, [accountId, lastUsedAppsFetch])
 
+  // There is another `load()` in `ScreenController.selectAccount()`,
+  // but that is not enough because we also need to reload settings
+  // after an unconfigured account becomes a configured one,
+  // i.e. after login or backup import,
+  // which correlates with `MainScreen` becoming rendered.
+  //
+  // TODO perf: this causes settings to load twice
+  // if they are still loading as a result of
+  // `ScreenController.selectAccount()`.
   useEffect(() => {
-    // Make sure it uses new version of settings store instance
+    if (
+      SettingsStoreInstance.state?.accountId === accountId &&
+      SettingsStoreInstance.state?.settings.configured_addr
+    ) {
+      log.debug('account is already configured, skipping settings reload')
+      return
+    }
     SettingsStoreInstance.effect.load()
-  }, [])
+  }, [accountId])
 
   const isSearchActive = queryStr.length > 0 || queryChatId !== null
   const showArchivedChats = !isSearchActive && archivedChatsSelected
@@ -331,63 +352,58 @@ export default function MainScreen({ accountId }: Props) {
         !messageSectionShouldBeHidden ? 'chat-view-open' : ''
       }`}
     >
-      <section
-        className={styles.chatListAndHeader}
-        role='region'
-        // TODO a11y: reconsider whether it's OK to use the "Chats" label
-        // even when we're searching for messages in one particular chat
-        // (`queryChatId`), and even despite the fact
-        // that search results, besides chats,
-        // also include messages and contacts.
-        // For the former, perhaps one could argue that `queryChatId`
-        // is just a part of the search query.
-        //
-        // TODO a11y: perhaps `pref_` is not nice, we might need
-        // a separate string.
-        // The same goes for other occurrences of `tx('pref_chats')`.
-        aria-label={tx('pref_chats')}
+      <div
+        className={styles.chatListAndHeaderAndAudioPlayer}
         style={chatListStyle}
       >
-        <section className={styles.chatListHeader} data-tauri-drag-region>
-          {showArchivedChats && (
-            <>
-              <span data-no-drag-region>
-                <Button
-                  aria-label={tx('back')}
-                  onClick={() => setArchivedChatsSelected(false)}
-                  className='backButton'
-                  styling='borderless'
-                >
-                  <Icon icon='arrow-left' className='backButtonIcon'></Icon>
-                </Button>
-              </span>
-              <div className={styles.archivedChatsTitle}>
-                {tx('chat_archived_chats_title')}
-              </div>
-            </>
-          )}
-          {!showArchivedChats && (
-            <SearchInput
-              id='chat-list-search'
-              inputRef={searchRef}
-              onChange={handleSearchChange}
-              onClear={queryChatId ? () => handleSearchClear() : undefined}
-              value={queryStr}
-            />
-          )}
+        <section
+          className={styles.chatListAndHeader}
+          role='region'
+          aria-label={tx('pref_chats')}
+        >
+          <section className={styles.chatListHeader} data-tauri-drag-region>
+            {showArchivedChats && (
+              <>
+                <span data-no-drag-region>
+                  <Button
+                    aria-label={tx('back')}
+                    onClick={() => setArchivedChatsSelected(false)}
+                    className='backButton'
+                    styling='borderless'
+                  >
+                    <Icon icon='arrow-left' className='backButtonIcon'></Icon>
+                  </Button>
+                </span>
+                <div className={styles.archivedChatsTitle}>
+                  {tx('chat_archived_chats_title')}
+                </div>
+              </>
+            )}
+            {!showArchivedChats && (
+              <SearchInput
+                id='chat-list-search'
+                inputRef={searchRef}
+                onChange={handleSearchChange}
+                onClear={queryChatId ? () => handleSearchClear() : undefined}
+                value={queryStr}
+              />
+            )}
+          </section>
+          <ChatList
+            queryStr={queryStr}
+            showArchivedChats={showArchivedChats}
+            onChatClick={onChatClick}
+            selectedChatId={chatId ?? null}
+            queryChatId={queryChatId}
+            onExitSearch={() => {
+              setQueryStr('')
+              setQueryChatId(null)
+            }}
+          />
         </section>
-        <ChatList
-          queryStr={queryStr}
-          showArchivedChats={showArchivedChats}
-          onChatClick={onChatClick}
-          selectedChatId={chatId ?? null}
-          queryChatId={queryChatId}
-          onExitSearch={() => {
-            setQueryStr('')
-            setQueryChatId(null)
-          }}
-        />
-      </section>
+
+        <GlobalVoiceMessagePlayer />
+      </div>
       {!smallScreenMode && (
         <div
           role='separator'
@@ -420,6 +436,67 @@ export default function MainScreen({ accountId }: Props) {
           }}
         />
       )}
+      <div className={styles.chatListAndHeaderAndAudioPlayer}>
+        <section
+          className={styles.chatListAndHeader}
+          role='region'
+          // TODO a11y: reconsider whether it's OK to use the "Chats" label
+          // even when we're searching for messages in one particular chat
+          // (`queryChatId`), and even despite the fact
+          // that search results, besides chats,
+          // also include messages and contacts.
+          // For the former, perhaps one could argue that `queryChatId`
+          // is just a part of the search query.
+          //
+          // TODO a11y: perhaps `pref_` is not nice, we might need
+          // a separate string.
+          // The same goes for other occurrences of `tx('pref_chats')`.
+          aria-label={tx('pref_chats')}
+        >
+          <section className={styles.chatListHeader} data-tauri-drag-region>
+            {showArchivedChats && (
+              <>
+                <span data-no-drag-region>
+                  <Button
+                    aria-label={tx('back')}
+                    onClick={() => setArchivedChatsSelected(false)}
+                    className='backButton'
+                    styling='borderless'
+                  >
+                    <Icon icon='arrow-left' className='backButtonIcon'></Icon>
+                  </Button>
+                </span>
+                <div className={styles.archivedChatsTitle}>
+                  {tx('chat_archived_chats_title')}
+                </div>
+              </>
+            )}
+            {!showArchivedChats && (
+              <SearchInput
+                id='chat-list-search'
+                inputRef={searchRef}
+                onChange={handleSearchChange}
+                onClear={queryChatId ? () => handleSearchClear() : undefined}
+                value={queryStr}
+              />
+            )}
+          </section>
+          <ChatList
+            queryStr={queryStr}
+            showArchivedChats={showArchivedChats}
+            onChatClick={onChatClick}
+            selectedChatId={chatId ?? null}
+            queryChatId={queryChatId}
+            onExitSearch={() => {
+              setQueryStr('')
+              setQueryChatId(null)
+            }}
+          />
+        </section>
+
+        <GlobalVoiceMessagePlayer />
+      </div>
+>>>>>>> upstream/main
       <section
         role='region'
         aria-labelledby='chat-section-heading'
@@ -519,6 +596,7 @@ function ChatHeading({ chat }: { chat: T.FullChat }) {
     if (chat.chatType === 'InBroadcast' || chat.chatType === 'Mailinglist') {
       openDialog(MailingListProfile, {
         chat: chat as T.FullChat & { chatType: 'InBroadcast' | 'Mailinglist' },
+        accountId,
       })
     } else if (chat.chatType === 'Group' || chat.chatType === 'OutBroadcast') {
       openViewGroupDialog(
@@ -664,9 +742,9 @@ function ChatNavButtons({
           <Icon coloring='navbar' icon='map' size={18} />
         </Button>
       )}
-      {/* Note that the `enableAVCallsV2` setting itself is hidden
-        on unsupported targets (Tauri, Browser). */}
-      {settingsStore?.desktopSettings.enableAVCallsV2 &&
+      {/* Calls are only implemented on Electron; Tauri and Browser
+        runtimes do not implement `startOutgoingVideoCall`. */}
+      {runtime.getRuntimeInfo().target === 'electron' &&
         chat.canSend &&
         chat.isEncrypted &&
         // Core only allows placing calls in chats of type "single"
@@ -674,17 +752,7 @@ function ChatNavButtons({
         // https://github.com/chatmail/core/blob/738dc5ce197f589131479801db2fbd0fb0964599/src/calls.rs#L147
         chat.chatType === 'Single' &&
         chat.contactIds.some(id => id > C.DC_CONTACT_ID_LAST_SPECIAL) && (
-          <Button
-            aria-label={tx('start_call')}
-            title={tx('start_call')}
-            className='navbar-button'
-            styling='borderless'
-            onClick={() => {
-              runtime.startOutgoingVideoCall(selectedAccountId(), chat.id)
-            }}
-          >
-            <Icon coloring='navbar' icon='phone' size={18} />
-          </Button>
+          <CallButton chat={chat} />
         )}
       <Button
         id='three-dot-menu-button'
@@ -701,6 +769,9 @@ function ChatNavButtons({
 
 function AppIcon({ accountId, app }: { accountId: number; app: T.Message }) {
   const tx = useTranslationFunction()
+  const { openContextMenu } = useContext(ContextMenuContext)
+  const { jumpToMessage } = useMessage()
+  const id = useId()
 
   const webxdcInfoFetch = useRpcFetch(BackendRemote.rpc.getWebxdcInfo, [
     accountId,
@@ -717,11 +788,15 @@ function AppIcon({ accountId, app }: { accountId: number; app: T.Message }) {
   const appName = webxdcInfoFetch.loading
     ? tx('loading')
     : webxdcInfoFetch.result.ok
-      ? webxdcInfoFetch.result.value.name
+      ? // Same as in `WebxdcMessageContent`
+        (webxdcInfoFetch.result.value.document
+          ? webxdcInfoFetch.result.value.document + '\n'
+          : '') + webxdcInfoFetch.result.value.name
       : 'Unknown App'
 
   return (
     <Button
+      id={id}
       styling='borderless'
       key={app.id}
       className={styles.webxdcIconButton}
@@ -734,6 +809,28 @@ function AppIcon({ accountId, app }: { accountId: number; app: T.Message }) {
           webxdcInfoFetch.result?.ok ? webxdcInfoFetch.result.value : undefined
         )
       }}
+      onContextMenu={event => {
+        openContextMenu({
+          ...mouseEventToPosition(event),
+          items: [
+            {
+              label: tx('show_in_chat'),
+              action: () =>
+                jumpToMessage({
+                  accountId,
+                  msgId: app.id,
+                  msgChatId: app.chatId,
+                  focus: true,
+                  scrollIntoViewArg: { block: 'center' },
+                }),
+            },
+          ],
+          ariaAttrs: {
+            'aria-labelledby': id,
+          },
+        })
+      }}
+      aria-haspopup='menu'
     >
       <img
         className={styles.webxdcIcon}
@@ -769,5 +866,48 @@ function AppIcons({
         <AppIcon key={app.id} accountId={accountId} app={app} />
       ))}
     </section>
+  )
+}
+
+function CallButton({ chat }: { chat: T.FullChat }) {
+  const tx = useTranslationFunction()
+  const accountId = selectedAccountId()
+  const elId = useId()
+
+  const onContextMenu = useContextMenu(
+    [
+      {
+        label: tx('start_audio_call'),
+        icon: 'phone',
+        action: () => {
+          runtime.startOutgoingVideoCall(accountId, chat.id, {
+            startWithCameraEnabled: false,
+          })
+        },
+      },
+      {
+        label: tx('start_video_call'),
+        icon: 'camera',
+        action: () => {
+          runtime.startOutgoingVideoCall(accountId, chat.id, {
+            startWithCameraEnabled: true,
+          })
+        },
+      },
+    ],
+    { 'aria-labelledby': elId }
+  )
+
+  return (
+    <Button
+      id={elId}
+      aria-label={tx('start_call')}
+      title={tx('start_call')}
+      className='navbar-button'
+      styling='borderless'
+      onClick={onContextMenu}
+    >
+      <Icon coloring='navbar' icon='phone' size={18} />
+    </Button>
   )
 }

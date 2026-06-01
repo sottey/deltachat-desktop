@@ -11,19 +11,18 @@ export interface SettingsStoreState {
   selfContact: Type.Contact
   settings: {
     [P in (typeof settingsKeys)[number]]: {
-      mvbox_move: string
       configured_addr: string
       displayname: string
       selfstatus: string
       mdns_enabled: string
-      show_emails: string
       bcc_self: string
       delete_device_after: string
-      delete_server_after: string
       download_limit: string
-      only_fetch_mvbox: string
+      force_encryption: '0' | '1'
       media_quality: string
       is_chatmail: '0' | '1'
+      who_can_call_me: WhoCanCallMe
+      'ui.mentions_enabled': '0' | '1'
     }[P]
   }
   desktopSettings: DesktopSettingsType
@@ -31,20 +30,28 @@ export interface SettingsStoreState {
 }
 
 const settingsKeys = [
-  'mvbox_move',
   'configured_addr',
   'displayname',
   'selfstatus',
   'mdns_enabled',
-  'show_emails',
   'bcc_self',
   'delete_device_after',
-  'delete_server_after',
   'download_limit',
-  'only_fetch_mvbox',
+  'force_encryption',
   'media_quality',
   'is_chatmail',
+  'who_can_call_me',
+  'ui.mentions_enabled',
 ] as const
+
+export const enum WhoCanCallMe {
+  Everybody = '0',
+  Contacts = '1',
+  Nobody = '2',
+}
+
+export const mentionsEnabledDefaultVal: SettingsStoreState['settings']['ui.mentions_enabled'] =
+  '1'
 
 class SettingsStore extends Store<SettingsStoreState | null> {
   reducer = {
@@ -89,7 +96,7 @@ class SettingsStore extends Store<SettingsStoreState | null> {
       this.setState(state => {
         if (state === null) {
           this.log.warn(
-            'trying to update local version of desktop settings object, but it was not loaded yet'
+            'trying to update local version of core settings object, but it was not loaded yet'
           )
           return
         }
@@ -113,15 +120,19 @@ class SettingsStore extends Store<SettingsStoreState | null> {
       if (accountId === undefined) {
         throw new Error('can not load settings when no account is selected')
       }
-      const settings = (await BackendRemote.rpc.batchGetConfig(
-        accountId,
-        settingsKeys as unknown as Array<(typeof settingsKeys)[number]>
-      )) as SettingsStoreState['settings']
-      const selfContact = await BackendRemote.rpc.getContact(
-        accountId,
-        C.DC_CONTACT_ID_SELF
-      )
-      const desktopSettings = await runtime.getDesktopSettings()
+
+      const [settings, selfContact, desktopSettings] = await Promise.all([
+        BackendRemote.rpc.batchGetConfig(
+          accountId,
+          settingsKeys as unknown as Array<(typeof settingsKeys)[number]>
+        ) as Promise<SettingsStoreState['settings']>,
+        BackendRemote.rpc.getContact(accountId, C.DC_CONTACT_ID_SELF),
+        runtime.getDesktopSettings(),
+      ])
+
+      if (settings['ui.mentions_enabled'] == null) {
+        settings['ui.mentions_enabled'] = mentionsEnabledDefaultVal
+      }
 
       const rc = runtime.getRC_Config()
       this.reducer.setState({

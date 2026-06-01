@@ -51,7 +51,7 @@ export interface Runtime {
     isContactRequest: boolean,
     subject: string,
     sender: string,
-    receiveTime: string,
+    sentTime: string,
     content: string
   ): void
   getDesktopSettings(): Promise<DesktopSettingsType>
@@ -92,6 +92,9 @@ export interface Runtime {
   downloadFile(pathToSource: string, filename: string): Promise<void>
   transformBlobURL(blob: string): string
   transformStickerURL(sticker_path: string): string
+  /** Moves a sticker file to the system trash. The path must be an absolute
+   * filesystem path inside the user's sticker folder. */
+  deleteSticker(stickerPath: string): Promise<void>
   readClipboardText(): Promise<string>
   /**
    * @returns promise that resolves into base64 encoded image string
@@ -133,7 +136,18 @@ export interface Runtime {
   /**
    * Initiates and conducts the video call fully, from start to end.
    */
-  startOutgoingVideoCall(accountId: number, chatId: number): void
+  startOutgoingVideoCall(
+    accountId: number,
+    chatId: number,
+    param: { startWithCameraEnabled: boolean }
+  ): void
+  openIncomingVideoCallWindow(params: {
+    accountId: number
+    chatId: number
+    callMessageId: number
+    callerWebrtcOffer: string
+    startWithCameraEnabled: boolean
+  }): Promise<void>
 
   // control app
   restartApp(): void
@@ -167,8 +181,11 @@ export interface Runtime {
   } | null>
   saveBackgroundImage(file: string, isDefaultPicture: boolean): Promise<string>
 
-  /** only support this if you have a real implementation for `isDroppedFileFromOutside`  */
-  onDragFileOut(file: string): void
+  /**
+   * only support this if you have a real implementation for `isDroppedFileFromOutside`
+   * file is the name of the hashed file and realName is the original name of the file
+   */
+  onDragFileOut(file: string, realName: string | null): void
   /** Set drag listener to handle drag and drop events */
   setDropListener(onDrop: DropListener | null): void
   /** guard function that checks if it is a file from `onDragFileOut`, if so it denies the drop.

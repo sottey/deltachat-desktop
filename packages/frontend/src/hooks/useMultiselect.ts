@@ -37,7 +37,6 @@ const none = Symbol()
  *         <button
  *           role='option' // Or 'tab' or whatever.
  *           aria-selected={multiselect.selectedItems.has(id)}
- *           className={multiselect.selectedItems.has(id) ? 'selected' : ''}
  *           onClick={event => {
  *             const shouldPreventDefault = multiselect.onClick(event, id)
  *             if (shouldPreventDefault) {
@@ -72,13 +71,13 @@ const none = Symbol()
  * as opposed to `keydown` events with `.code === "Space"`,
  * because we support both keyboard and mouse selection.
  *
- * If items are removed from {@link availableItems},
- * they will not be automatically removed from {@link selectedItems}.
+ * If items are removed from {@linkcode availableItems},
+ * they will not be automatically removed from {@linkcode selectedItems}.
  * Make sure to handle this yourself, to avoid confusing behavior
  * where items are selected, but are not visible on the screen.
  *
- * It is also possible to provide {@link selectedItems} Set
- * that includes items which are not a part of {@link availableItems}.
+ * It is also possible to provide {@linkcode selectedItems} Set
+ * that includes items which are not a part of {@linkcode availableItems}.
  */
 export function useMultiselect<T>(
   /**
@@ -230,9 +229,18 @@ export function useMultiselect<T>(
     }
   }, [])
 
-  // This handles the "Space" keydown event, as well as clicks.
-  const onClick = useCallback(
-    (event: React.MouseEvent, item: T): boolean => {
+  // Note that `keydown` and `click` events both fire
+  // for a single press of "Space" for `<button>`s
+  // https://w3c.github.io/uievents/#event-type-keydown
+  // > If the key is the Enter or Space key and the current focus
+  // > is on a state-changing element, the default action MUST be
+  // > to dispatch a click event
+  //
+  // This is important for the Ctrl + Space handler
+  // which would basically have no effect (toggle selection twice)
+  // if `preventDefault()` is not called for the `keydown` event.
+  const onClickOrKeyDown = useCallback(
+    (event: React.MouseEvent | React.KeyboardEvent, item: T): boolean => {
       // Note that we use `event.ctrlKey` and not `ctrlPressed.current`.
       // We could get rid of the `event` argument,
       // but let's not do that, e.g. in case we later actually need it,
@@ -250,11 +258,35 @@ export function useMultiselect<T>(
         return true // shouldPreventDefault
       }
 
-      onSelectionChange(new Set([item]))
+      if (
+        // Check if it's already selected.
+        !(
+          selectedItemsRef.current.size === 1 &&
+          selectedItemsRef.current.has(item)
+        )
+      ) {
+        onSelectionChange(new Set([item]))
+      }
       lastActivatedItem.current = item
       return false
     },
     [onSelectContiguous, onSelectionChange, toggleItemSelection]
+  )
+  const onClick = useCallback(
+    (event: React.MouseEvent, item: T) => {
+      return onClickOrKeyDown(event, item)
+    },
+    [onClickOrKeyDown]
+  )
+  const onKeyDown = useCallback(
+    (event: React.KeyboardEvent, item: T) => {
+      if (event.code !== 'Space') {
+        return false
+      }
+
+      return onClickOrKeyDown(event, item)
+    },
+    [onClickOrKeyDown]
   )
 
   // Handle Shift + ArrowDown, Shift + End.
@@ -309,6 +341,10 @@ export function useMultiselect<T>(
        */
       onClick,
       /**
+       * @see {@linkcode onClick}
+       */
+      onKeyDown,
+      /**
        * This must be invoked when an item is focused,
        * i.e. on `focus` events.
        *
@@ -318,6 +354,6 @@ export function useMultiselect<T>(
        */
       onFocus,
     }),
-    [onClick, onFocus, selectedItems]
+    [onClick, onKeyDown, onFocus, selectedItems]
   )
 }

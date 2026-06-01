@@ -12,7 +12,6 @@
     <string name="off">꺼짐</string>
     <string name="def">기본값</string>
     <string name="default_value">기본 (%1$s)</string>
-    <string name="default_value_as_above">기본 (위와 동일함)</string>
     <string name="custom">커스텀</string>
     <string name="none">없음</string>
     <string name="automatic">자동</string>
@@ -37,6 +36,7 @@
     <string name="archive">아카이브</string>
     <!-- Verb "to unarchive", as in "remove a chat from the archive", opposite of the previous string -->
     <string name="unarchive">보관 취소</string>
+    <!-- Verb "to mute". used to mute a chat, so that it is silenced e.g. does not make noise or cause notifications -->
     <string name="mute">음소거</string>
     <string name="ephemeral_messages">사라지는 메시지</string>
     <string name="ephemeral_messages_hint">Delta Chat을 사용하는 경우 이 대화의 모든 구성원에게 적용되며, 메시지를 복사, 저장 및 회송하거나 다른 전자우편 클라이언트를 사용할 수 있습니다.</string>
@@ -56,10 +56,6 @@
     <string name="load_remote_content_ask">원격 이미지는 당신을 추적하기 위해 사용될 수 있습니다.\n\n이 설정은 폰트와 다른 콘텐츠를 불러오는 것도 허용합니다. 만약 비활성화되어도, 내장 또는 캐시된 이미지를 볼 수 있습니다.\n\n원격 이미지를 불러올까요?</string>
     <string name="always">항상</string>
     <string name="once">한 번만</string>
-    <!-- deprecated, UI must not offer an option to show the password -->
-    <string name="show_password">비밀번호 보이기</string>
-    <!-- deprecated, UI must not offer an option to show the password -->
-    <string name="hide_password">비밀번호 숨기기</string>
     <string name="not_now">나중에</string>
     <string name="never">절대</string>
     <string name="one_moment">잠시만 기다려 주세요…</string>
@@ -128,6 +124,7 @@
     <!-- "Stickers" as known from other messengers; in some languages, the English "Sticker" is fine. -->
     <string name="sticker">스티커</string>
     <string name="images">이미지</string>
+    <!-- a noun, used for "Music" and other "Audio" files -->
     <string name="audio">오디오</string>
     <string name="voice_message">음성 메시지</string>
     <string name="forwarded">전달됨</string>
@@ -140,6 +137,7 @@
     <string name="camera">카메라</string>
     <!-- As in "start a video recording" or "take a photo"; eg. the description of the "shutter button" in cameras -->
     <string name="capture">캡쳐</string>
+    <!-- Switch eg. from front to back camera -->
     <string name="switch_camera">카메라 전환</string>
     <string name="toggle_fullscreen">전체 화면 모드 전환</string>
     <string name="location">위치</string>
@@ -176,8 +174,6 @@
     <string name="menu_new_contact">대화상대 추가</string>
     <string name="menu_new_chat">채팅 시작</string>
     <string name="menu_new_group">새 그룹</string>
-    <!-- deprecated -->
-    <string name="add_recipients">수신자 추가</string>
     <string name="menu_send">보내기</string>
     <string name="menu_toggle_keyboard">이모티콘 키보드 전환</string>
     <string name="menu_edit_group">그룹 편집</string>
@@ -231,7 +227,6 @@
     <string name="menu_more_options">더 많은 옵션</string>
     <string name="menu_learn_spelling">맞춤법 배우기</string>
     <string name="jump_to_message">메시지로 이동</string>
-    <string name="copy_json">JSON 복사</string>
     <string name="replace_draft">초안 대체</string>
     <string name="title_share_location">그룹 구성원과 위치 공유하기</string>
     <string name="device_talk">기기 메시지</string>
@@ -257,12 +252,13 @@
     <string name="mute_for_seven_days">7일 동안 알림 끄기</string>
     <string name="mute_forever">영구히 음소거</string>
 
+    <!-- deprecated -->
     <string name="share_location_for_5_minutes">5분 동안</string>
+
     <string name="share_location_for_30_minutes">30분 동안</string>
     <string name="share_location_for_one_hour">1시간 동안</string>
     <string name="share_location_for_two_hours">2시간 동안</string>
     <string name="share_location_for_six_hours">6시간 동안</string>
-
     <plurals name="ask_send_following_n_files_to">
         <item quantity="other">%s에게 %d파일을 보낼까요?</item>
     </plurals>
@@ -271,10 +267,7 @@
     <plurals name="ask_delete_messages">
         <item quantity="other">%d개의 메시지를 삭제하시겠습니까?</item>
     </plurals>
-    <!-- deprecated, use ask_delete_messages -->
-    <plurals name="ask_delete_messages_simple">
-        <item quantity="other">%d개의 메시지를 삭제하시겠습니까?</item>
-    </plurals>
+    <!-- deprecated, use ask_forward_messages -->
     <string name="ask_forward">%1$s님에게 메시지를 전달할까요?</string>
     <string name="ask_forward_multiple">%1$d 채팅으로 메시지를 전달하시겠습니까?</string>
     <string name="ask_export_attachment">첨부 파일을 내보내면 단말기의 다른 앱에서 해당 첨부 파일에 액세스할 수 있습니다.\n\n계속하시겠습니까?</string>
@@ -287,11 +280,9 @@
     <string name="ask_remove_members">그룹에서 %1$s을/를 제거하시겠습니까?</string>
     <string name="open_url_confirmation">이 링크를 여시겠습니까?</string>
 
-
     <!-- contact list -->
     <string name="contacts_title">연락처</string>
     <string name="contacts_type_email_above">위에 이메일 주소를 입력하세요.</string>
-
 
     <!-- chatlist and chat view -->
     <plurals name="chat_archived">
@@ -333,29 +324,18 @@
     <string name="attachment_failed_to_load">첨부 파일을 불러오지 못했습니다.</string>
     <!-- mailing lists -->
     <string name="mailing_list">메일 목록</string>
-    <!-- deprecated -->
-    <string name="mailing_list_profile_info">메일링 목록 이름 및 이미지의 변경 사항은 이 장치에만 적용됩니다.</string>
 
     <!-- webxdc -->
     <!-- "Start..." button for an app -->
     <string name="start_app">시작...</string>
     <!-- this is a warning that is shown when one tries to send something to a chat that is not yet accepted. -->
     <string name="accept_request_first">채팅 요청을 먼저 수락하십시오.</string>
-    <!-- map -->
-    <string name="filter_map_on_time">시간 범위 내 위치 표시</string>
-    <string name="show_location_traces">기록 보기</string>
-    <string name="add_poi">관심 지점 전송</string>
-
-
     <!-- punycode warning / labeled links -->
-    <!-- placeholder is domain/hostname that should be trusted -->
-    <string name="open_external_url_trust_domain">%1$s에 대해 다시 묻지 마시오</string>
     <string name="puny_code_warning_header">의심되는 링크가 탐지됨</string>
     <!-- placeholder contains the hostname converted to ascii -->
     <string name="puny_code_warning_question">정말 %1$s에 방문하시겠습니까?</string>
     <!-- this message is shown whenever a link with non-latin characters is clicked. first placeholder is original hostname with special chars, second placeholder is hostname encoded in ascii -->
     <string name="puny_code_warning_description">이 링크는 서로 다른 알파벳의 유사하게 생긴 문자를 잘못 전달할 수 있습니다. %1$s 링크를 따라가면 라틴어가 아닌 문자의 경우 정상적인 %2$s로 이어집니다. 이러한 문자를 예상하지 못한 경우 이 링크는 안전하지 않을 수 있습니다.</string>
-
 
     <!-- search -->
     <string name="search">검색</string>
@@ -367,6 +347,7 @@
     <string name="remove_group_image">그룹 이미지 제거</string>
     <string name="change_group_image">그룹 이미지 변경</string>
     <string name="group_create_button">그룹 만들기</string>
+    <!-- deprecated, use please_enter_chat_name -->
     <string name="group_please_enter_group_name">그룹 이름을 입력하시오</string>
     <string name="group_add_members">대화상대 추가</string>
     <string name="group_self_not_in_group">실행을 위해선 그룹의 멤버가 되어야 합니다.</string>
@@ -392,8 +373,6 @@
     <string name="incoming_messages">수신 메시지</string>
     <!-- Headline for the "Outbox" eg. in the "Connectivity" view -->
     <string name="outgoing_messages">발신 메시지</string>
-    <!-- Headline in the "Connectivity" view. Placeholder will be replaced by a domain -->
-    <string name="storage_on_domain">%1$s에 저장됨</string>
     <string name="connectivity">연결</string>
     <!-- Shown in the title bar if the app is "Not connected"; prefer short strings. -->
     <string name="connectivity_not_connected">연결되지 않음</string>
@@ -405,12 +384,12 @@
     <string name="connectivity_connected">연결됨</string>
     <string name="sending">전송중...</string>
     <string name="last_msg_sent_successfully">마지막 메시지 전송됨.</string>
+    <!-- deprecated -->
     <string name="not_supported_by_provider">공급자가 지원하지 않습니다.</string>
     <!-- Subtitle in quota context of "Connectivity" view. Should be be plural always, no number is prefixed. -->
     <string name="messages">메시지</string>
     <!-- Used for describing resource usage, resulting string will be eg. "1.2 GiB of 3 GiB used" -->
     <string name="part_of_total_used">%2$s중 %1$s 사용됨</string>
-
 
     <string name="scan_invitation_code">초대 코드 스캔</string>
     <string name="login_title">로그인</string>
@@ -454,10 +433,7 @@
     <string name="share_text_multiple_chats">\"%2$s\"를 %1$d 채팅에 보내시겠습니까?</string>
     <string name="share_abort">권한이 없어 공유가 중단되었습니다.</string>
 
-
     <!-- preferences -->
-    <string name="pref_using_custom">사용자 정의 사용: %s</string>
-    <string name="pref_using_default">기본값 사용: %s</string>
     <string name="pref_profile_info_headline">내 프로필</string>
     <string name="pref_profile_photo">프로필 사진</string>
     <string name="pref_blocked_contacts">차단 목록</string>
@@ -466,6 +442,7 @@
     <string name="pref_your_name">내 이름</string>
     <!-- Label of the Bio/Signature/Status/Motto field -->
     <string name="pref_default_status_label">서명 텍스트</string>
+    <!-- Option name for changing behaviour of the "Enter key" to sending out a message directly (instead of adding new line). If in doubt, please refer to a similar option in other messengers. -->
     <string name="pref_enter_sends">엔터키로 메시지 전송</string>
     <string name="pref_enter_sends_explain">Enter 키를 누르면 문자 메시지가 전송됩니다.</string>
     <string name="pref_outgoing_media_quality">발신 미디어 품질</string>
@@ -480,13 +457,12 @@
     <string name="pref_notifications_priority">우선순위</string>
     <string name="pref_notifications_explain">새 메시지에 대한 시스템 알림 활성화</string>
     <string name="pref_show_notification_content">알림에 메시지 내용 표시</string>
+    <!-- deprecated -->
     <string name="pref_show_notification_content_explain">알림에서 메시지를 보낸 사람과 첫 번째 단어를 표시합니다.</string>
     <string name="pref_led_color">LED 색상</string>
     <string name="pref_sound">알림음</string>
     <string name="pref_silent">무음</string>
     <string name="pref_privacy">개인정보 보호</string>
-    <!-- deprecated, use pref_chats -->
-    <string name="pref_chats_and_media">대화 및 미디어</string>
     <string name="pref_system_default">시스템 기본값</string>
     <!-- Translators: as in "opposite of dark" -->
     <string name="pref_light_theme">밝게</string>
@@ -516,11 +492,17 @@
     <string name="pref_background">채팅방 배경화면</string>
     <string name="pref_background_btn_default">기본 이미지 사용</string>
     <string name="pref_background_btn_gallery">갤러리에서 선택됨</string>
+    <!-- deprecated -->
     <string name="pref_imap_folder_warn_disable_defaults">이 선택사항을 변경할 경우, 서버와 다른 클라이언트가 적절하게 구성되어 있는지 확인하십시오.\n\n그렇지 않으면 상황이 전혀 작동하지 않을 수 있습니다.</string>
+    <!-- deprecated -->
     <string name="pref_auto_folder_moves">DeltaChat 폴더로 자동 이동</string>
+    <!-- deprecated -->
     <string name="pref_only_fetch_mvbox_title">DeltaChat 폴더에서만 가져오기</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_no">아뇨, 오직 채팅만</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_accepted_contacts">승인된 연락처의 경우</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_all">전부</string>
     <string name="pref_on_demand_location_streaming">주문형 위치 스트리밍</string>
     <string name="pref_background_default">기본 배경</string>
@@ -532,10 +514,6 @@
     <!-- %1$s will be replaced by a human-readable number of bytes, eg. 32 KiB, 1 MiB -->
     <string name="up_to_x">%1$s까지 </string>
     <string name="download_failed">다운로드 실패</string>
-    <!-- %1$s will be replaced by a human-readable number of bytes, eg. 32 KiB, 1 MiB. Resulting string eg. "1 MiB message" -->
-    <string name="n_bytes_message">%1$s 메시지</string>
-    <!-- %1$s will be replaced by human-readable date and time -->
-    <string name="download_max_available_until">%1$s까지 최대 다운로드 가능</string>
     <string name="profile_image_select">프로필 이미지 선택</string>
     <string name="select_your_new_profile_image">새로운 프로필 이미지 선택</string>
     <string name="profile_image_delete">프로필 이미지 삭제</string>
@@ -553,10 +531,11 @@
     <!-- automatically delete message -->
     <string name="delete_old_messages">오래된 메시지 삭제</string>
     <string name="autodel_device_title">기기에서 메시지 삭제</string>
+    <!-- deprecated -->
     <string name="autodel_server_title">서버에서 메시지 삭제</string>
     <!-- %1$d will be replaced by the number of messages, you can assume plural/lots here. %2$s will be replaced by a timespan option. -->
     <string name="autodel_device_ask">%1$d 메시지와 새로 가져온 모든 메시지 \"%2$s\"를 나중에 삭제하시겠습니까?\n\n• 여기에는 모든 미디어가 포함됩니다.\n\n• 메시지가 표시되었는지 여부에 관계없이 삭제됩니다.\n\n• \"저장된 메시지\"는 로컬 삭제에서 건너뜁니다.</string>
-    <!-- shown below enabled autodel_server-option, should be a summary of autodel_server_ask and remind about the impact -->
+    <!-- deprecated -->
     <string name="autodel_server_enabled_hint">여기에는 모든 서버 폴더에 있는 전자 메일, 미디어 및 \"저장된 메시지\"가 포함됩니다. 서버에 데이터를 보관하거나 Delta Chat 외에 다른 이메일 클라이언트를 사용하는 경우 이 기능을 사용하지 마십시오.</string>
     <string name="autodel_confirm">알겠습니다. 모든 메시지를 삭제하세요.</string>
     <!-- "At once" in the meaning of "Immediately", without any intervening time. -->
@@ -599,10 +578,6 @@
     <string name="ephemeral_timer_seconds_by_you">사라지는 메시지 타이머를 %1$s초로 설정함.</string>
     <!-- %1$s will be replaced by the number of seconds (always >1) the timer is set to, %2$s will be replaced by name of the contact -->
     <string name="ephemeral_timer_seconds_by_other">%2$s가 사라지는 메시지 타이머를 %1$s초로 설정함.</string>
-    <!-- deprecated, usage needs to be removed in core -->
-    <string name="ephemeral_timer_1_minute_by_you">사라지는 메시지 타이머를 1분으로 설정함.</string>
-    <!-- deprecated, usage needs to be removed in core -->
-    <string name="ephemeral_timer_1_minute_by_other">%1$s가 사라지는 메시지 타이머를 1분으로 설정함.</string>
     <string name="ephemeral_timer_1_hour_by_you">사라지는 메시지 타이머를 1시간으로 설정함.</string>
     <!-- %1$s will be replaced by name of the contact -->
     <string name="ephemeral_timer_1_hour_by_other">%1$s가 사라지는 메시지 타이머를 1시간으로 설정함.</string>
@@ -629,11 +604,11 @@
     <!-- %1$s will be replaced by the number of weeks (always >1) the timer is set to, %2$s will be replaced by name of the contact -->
     <string name="ephemeral_timer_weeks_by_other">%2$s가 사라지는 메시지 타이머를 %1$s주로 설정함.</string>
     <string name="devicemsg_self_deleted">저장된 메시지 대화를 삭제했습니다.\n\nℹ️\"저장된 메시지\" 기능을 다시 사용하려면 자신과의 대화를 새로 만드십시오.</string>
-    <!-- %1$s will be replaced by the amount of storage already used, sth. as '500 MB'. If you want to use a percentage sign, type in two of them, eg. %1$s %% -->
+    <!-- deprecated -->
     <string name="devicemsg_storage_exceeding">⚠️ 공급자의 저장공간이 곧 고갈될 예정입니다. %1$s%%가 이미 사용 중입니다.\n\n저장공간이 가득 찬 경우 메시지를 수신하지 못할 수 있습니다.\n\n👉 공급자의 웹 인터페이스에서 이전 데이터를 삭제할 수 있는지 확인하고 \"설정 / 이전 메시지 삭제\"를 활성화하는 것을 고려하십시오. \"설정/연결\"에서 언제든지 현재 저장공간 사용량을 확인할 수 있습니다.</string>
     <!-- %1%s will be replaced by date and time in some human-readable format -->
     <string name="devicemsg_bad_time">⚠️ 장치의 날짜 또는 시간이 정확하지 않은 것 같습니다(%1$s).\n\n메시지가 올바르게 수신되도록 시계 ⏰🔧를 조정하세요.</string>
-    <string name="devicemsg_update_reminder">⚠️ 델타 채팅 버전이 오래되었을 수 있습니다.\n\n채팅 파트너가 최신 버전을 사용하기 때문에 문제가 발생할 수 있습니다.  당신은 최신 기능이 없습니다. 😳\n https://get.delta.chat 또는 앱 스토어에서 업데이트를 확인하십시오.</string>
+    <string name="devicemsg_update_reminder">⚠️ 델타 채팅 버전이 오래되었을 수 있습니다.\n\n채팅 파트너가 최신 버전을 사용하기 때문에 문제가 발생할 수 있습니다. 당신은 최신 기능이 없습니다. 😳\n https://get.delta.chat 또는 앱 스토어에서 업데이트를 확인하십시오.</string>
 
     <!-- Some options as "Add Second Device" or "Backup" may require the system PIN/Fingerprint/Gesture/Etc. to be entered in a system dialog. This hint is added to the system dialog, below a title as "Add Second Device" or "Backup". -->
     <string name="enter_system_secret_to_continue">계속하려면 시스템 정의 암호를 입력하십시오.</string>
@@ -667,13 +642,9 @@
     <string name="qrshow_join_contact_hint">%1$s과 채팅을 하려면 스캔하시오</string>
     <string name="qrshow_join_contact_no_connection_toast">인터넷에 연결되어 있지 않아 QR 코드 설정을 수행할 수 없습니다.</string>
     <string name="qraccount_ask_create_and_login">\"%1$s\"에서 새 이메일 주소를 만들고 로그인하시겠습니까?</string>
-    <!-- deprecated, use confirm_add_transport when scanning such a QR code from the main scanner -->
-    <string name="qraccount_ask_create_and_login_another">\"%1$s\"에서 새 이메일 주소를 만들고 로그인하시겠습니까?\n\n기존 계정은 삭제되지 않습니다. 계정 전환 항목을 사용하여 계정 간을 전환합니다.</string>
     <string name="qraccount_qr_code_cannot_be_used">스캔한 QR 코드를 사용하여 새 계정을 설정할 수 없습니다.</string>
     <!-- the placeholder will be replaced by the address of the profile -->
     <string name="qrlogin_ask_login">\"%1$s\"에 로그인하시겠습니까?</string>
-    <!-- deprecated, use confirm_add_transport when scanning such a QR code from the main scanner -->
-    <string name="qrlogin_ask_login_another">\"%1$s\"에 로그인하시겠습니까?\n\n기존 계정은 삭제되지 않습니다. 계정 전환 항목을 사용하여 계정 간을 전환합니다.</string>
     <!-- first placeholder will be replaced by name of the inviter, second placeholder will be replaced by the name of the inviter. -->
     <string name="secure_join_started">%1$s이 그룹에 가입하도록 초대했습니다.\n\n%2$s의 장치가 응답하기를 기다리는 중입니다...</string>
     <!-- placeholder will be replaced by the name of the inviter. -->
@@ -683,8 +654,7 @@
     <!-- first placeholder is the name of the chat -->
     <string name="confirm_replace_draft">%1$s에 이미 임시 저장된 메시지가 있습니다. 바꾸시겠습니까?</string>
     <string name="mailto_link_could_not_be_decoded">링크로 보내는 메일을 디코딩할 수 없습니다: %1$s</string>
-
-    <!-- notifications  -->
+    <!-- notifications -->
     <string name="notify_reply_button">답장하기</string>
     <string name="notify_new_message">새 메시지</string>
     <string name="notify_background_connection_enabled">백그라운드 연결 사용</string>
@@ -711,9 +681,6 @@
     <string name="ImageEditorHud_flip">뒤집기</string>
     <string name="ImageEditorHud_rotate">돌리기</string>
 
-    <!-- strings introduced on desktop. we want to share strings between the os, in general, please do not add generic strings here -->
-    <string name="about_offical_app_desktop">이것은 Delta Chat 데스크톱 공식 앱입니다.</string>
-    <string name="about_licensed_under_desktop">이 소프트웨어는 GNU GPL 버전 3에 따라 라이센스가 부여되며 소스 코드는 GitHub에서 사용할 수 있습니다.</string>
     <string name="welcome_desktop">Delta Chat에 오신 것을 환영합니다.</string>
     <string name="global_menu_preferences_language_desktop">언어</string>
     <string name="global_menu_file_desktop">파일</string>
@@ -746,9 +713,9 @@
     <string name="message_detail_received_desktop">받음</string>
     <string name="menu.view.developer.open.log.folder">로그 폴더 열기</string>
     <string name="menu.view.developer.open.current.log.file">현재 로그 파일 열기</string>
+    <!-- deprecated, used on desktop although there is not spell checker -->
     <string name="no_spellcheck_suggestions_found">맞춤법 제안을 찾을 수 없습니다.</string>
     <string name="show_window">창 보이기</string>
-
     <!-- title of the "keybindings" dialog (for the keybindings names as such, where possible the normal command strings are used) -->
     <string name="keybindings">키 바인딩</string>
     <string name="switch_between_chats">채팅 간 전환</string>
@@ -766,7 +733,6 @@
     <string name="a11y_delivery_status_invalid">잘못된 전송 상태</string>
     <string name="a11y_background_preview_label">배경 미리보기</string>
     <string name="a11y_disappearing_messages_activated">사라지는 메시지 활성화됨</string>
-
     <!-- iOS specific strings, developers: please take care to remove strings that are no longer used! -->
     <string name="stop_sharing_location">위치 공유 중지</string>
     <string name="a11y_voice_message_hint_ios">녹화가 끝나면 두 번 눌러 전송합니다. 기록을 삭제하려면 두 손가락으로 문지르십시오.</string>

@@ -1,5 +1,6 @@
 import { platform } from 'os'
 import { app, Notification, nativeImage, ipcMain } from 'electron'
+import { dialog } from 'electron/main'
 
 import * as mainWindow from './windows/main.js'
 import { appIcon } from './application-constants.js'
@@ -7,6 +8,10 @@ import type { DcNotification } from '../../shared/shared-types.js'
 import { getLogger } from '../../shared/logger.js'
 
 import type { NativeImage, IpcMainInvokeEvent } from 'electron'
+import { DCJsonrpcRemoteInitializedP } from './ipc.js'
+import { tx } from './load-translations.js'
+import { unknownErrorToString } from '@deltachat-desktop/shared/unknownErrorToString'
+import { appName } from '@deltachat-desktop/shared/constants.js'
 
 /**
  * Notification related functions to:
@@ -63,6 +68,12 @@ function createNotification(data: DcNotification): Notification {
     body:
       platform() === 'linux' ? filterNotificationText(data.body) : data.body,
     icon,
+    hasReply:
+      data.accountId !== 0 &&
+      data.chatId !== 0 &&
+      // Also need this condition because we don't want to have the "reply" UI
+      // for generic "<chat name>: 3 new messages" notifications.
+      data.messageId !== 0,
     timeoutType: 'default',
   }
 
@@ -90,9 +101,29 @@ function onClickNotification(
   mainWindow.window?.focus()
 }
 
+/**
+ * There may be multiple notifications per one message.
+ * Such as with "Bob reacted to your message",
+ * this is why we have `Notification[]` here.
+ */
 const notifications: {
-  [accountId: number]: { [chatId: number]: Notification[] }
+  [accountId: number]: { [chatId: number]: { [msgId: number]: Notification[] } }
 } = {}
+
+/**
+ * Track closed notifications on Mac to prevent calling close() on
+ * already-closed notifications, which crashes app immediately on macOS.
+ */
+const closedNotifications = new WeakSet<Notification>()
+
+const closeNotification = (notify: Notification) => {
+  if (!closedNotifications.has(notify)) {
+    if (isMac) {
+      closedNotifications.add(notify)
+    }
+    notify.close()
+  }
+}
 
 /**
  * triggers creation of a notification, adds appropriate
@@ -113,36 +144,98 @@ function showNotification(_event: IpcMainInvokeEvent, data: DcNotification) {
 
     notify.on('click', Event => {
       onClickNotification(data.accountId, chatId, data.messageId, Event)
-      notifications[accountId][chatId] =
-        notifications[accountId]?.[chatId]?.filter(n => n !== notify) || []
-      notify.close()
+      notifications[accountId][chatId][data.messageId] =
+        notifications[accountId]?.[chatId]?.[data.messageId]?.filter(
+          n => n !== notify
+        ) || []
+      closeNotification(notify)
     })
     notify.on('close', () => {
       // on Window and Linux this can be triggered by system time out
-      // when the message is moved to notification center so only close
-      // the notification on this event on Mac
+      // when the message is moved to notification center so only clear
+      // the notification tracking on Mac
       if (isMac) {
-        notifications[accountId][chatId] =
-          notifications[accountId]?.[chatId]?.filter(n => n !== notify) || []
+        // Mark as closed to prevent calling close() again later
+        closedNotifications.add(notify)
+        notifications[accountId][chatId][data.messageId] =
+          notifications[accountId]?.[chatId]?.[data.messageId]?.filter(
+            n => n !== notify
+          ) || []
       }
-      // eslint-disable-next-line no-console
-      console.log('Notification close event triggered', notify)
+    })
+    notify.on('reply', async e => {
+      // See the Android's implementation:
+      // https://github.com/deltachat/deltachat-android/blob/acb4eb2ae1ccc327aa7df6cf2b40da09e1b7e47b/src/main/java/org/thoughtcrime/securesms/notifications/RemoteReplyReceiver.java#L58-L71
+      try {
+        const jsonrpcRemote = await DCJsonrpcRemoteInitializedP
+
+        const sendP = jsonrpcRemote.rpc.sendMsg(accountId, chatId, {
+          quotedMessageId: data.messageId,
+          text: e.reply,
+
+          file: null,
+          filename: null,
+          html: null,
+          location: null,
+          overrideSenderName: null,
+          quotedText: null,
+          viewtype: null,
+        })
+
+        // We don't `await` these because they're not that important.
+        jsonrpcRemote.rpc.markseenMsgs(accountId, [data.messageId])
+        jsonrpcRemote.rpc.marknoticedChat(accountId, chatId)
+
+        await sendP
+      } catch (err) {
+        // Note that we expect this error for channels and otherwise
+        // read-only chats, i.e. `!chat.canSend`.
+        // TODO fix: we should do the same checks as we do
+        // for the "Reply" menu item, `showReply`.
+        dialog.showErrorBox(
+          `${appName}: ${tx('notify_reply_button')} failed`,
+          tx(
+            'error_x',
+            'Failed to send reply from notification:\n' +
+              unknownErrorToString(err)
+          )
+        )
+      }
     })
 
     if (!notifications[accountId]) {
       notifications[accountId] = {}
     }
+    if (!notifications[accountId][chatId]) {
+      notifications[accountId][chatId] = {}
+    }
 
-    if (notifications[accountId][chatId]) {
-      notifications[accountId][chatId].push(notify)
+    if (notifications[accountId][chatId][data.messageId]) {
+      notifications[accountId][chatId][data.messageId].push(notify)
     } else {
-      notifications[accountId][chatId] = [notify]
+      notifications[accountId][chatId][data.messageId] = [notify]
     }
 
     notify.show()
   } catch (error) {
     log.warn('could not create notification:', error)
   }
+}
+
+function clearNotificationsForMessage(
+  _: unknown,
+  accountId: number,
+  chatId: number,
+  messageId: number
+) {
+  const arr = notifications[accountId]?.[chatId]?.[messageId]
+  if (arr == undefined) {
+    return
+  }
+  arr.forEach(notify => {
+    closeNotification(notify)
+  })
+  delete notifications[accountId][chatId][messageId]
 }
 
 function clearNotificationsForChat(
@@ -152,8 +245,8 @@ function clearNotificationsForChat(
 ) {
   log.debug('clearNotificationsForChat', { accountId, chatId, notifications })
   if (notifications[accountId]?.[chatId]) {
-    for (const notify of notifications[accountId]?.[chatId] || []) {
-      notify.close()
+    for (const messageId of Object.keys(notifications[accountId][chatId])) {
+      clearNotificationsForMessage(_, accountId, chatId, Number(messageId))
     }
     delete notifications[accountId][chatId]
   }
@@ -185,3 +278,12 @@ function filterNotificationText(text: string) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
 }
+
+DCJsonrpcRemoteInitializedP.then(jsonrpcRemote => {
+  jsonrpcRemote.on('MsgDeleted', (accountId, { chatId, msgId }) => {
+    clearNotificationsForMessage(null, accountId, chatId, msgId)
+  })
+  jsonrpcRemote.on('MsgsNoticed', (accountId, { chatId }) => {
+    clearNotificationsForChat(null, accountId, chatId)
+  })
+})

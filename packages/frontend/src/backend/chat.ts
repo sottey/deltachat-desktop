@@ -60,7 +60,7 @@ export async function unmuteChat(accountId: number, chatId: number) {
   })
 }
 
-export function markChatAsSeen(accountId: number, chatId: number) {
+export function marknoticedChat(accountId: number, chatId: number) {
   // Mark all messages in chat as "seen" in core backend
   BackendRemote.rpc.marknoticedChat(accountId, chatId)
 
@@ -88,23 +88,6 @@ export async function createChatByContactId(
   }
 
   return await BackendRemote.rpc.createChatByContactId(accountId, contactId)
-}
-
-/**
- * Returns true if all contacts of a given list are verified, otherwise false.
- */
-export async function areAllContactsVerified(
-  accountId: number,
-  contactIds: number[]
-): Promise<boolean> {
-  const contacts = await BackendRemote.rpc.getContactsByIds(
-    accountId,
-    contactIds
-  )
-
-  return !contactIds.some(contactId => {
-    return !contacts[contactId].isVerified
-  })
 }
 
 /**

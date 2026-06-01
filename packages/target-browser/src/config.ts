@@ -29,8 +29,11 @@ export let DC_ACCOUNTS_DIR = join(DATA_DIR, 'accounts')
 export const LOCALES_DIR = join(__dirname, '../../../_locales')
 
 // ENV Vars
+export const DC_FRONTEND_NO_TLS: boolean =
+  process.env['DC_FRONTEND_NO_TLS'] === 'true' ||
+  process.env['DC_FRONTEND_NO_TLS'] === '1'
 export const ENV_WEB_PASSWORD = process.env['WEB_PASSWORD']
-export const ENV_WEB_PORT = process.env['WEB_PORT'] || 3000 // currently only port 3000 is supported
+export const ENV_WEB_PORT = process.env['WEB_PORT'] || 3000
 // set this to one if you use this behind a proxy
 export const ENV_WEB_TRUST_FIRST_PROXY = Boolean(
   process.env['WEB_TRUST_FIRST_PROXY']
@@ -46,23 +49,23 @@ if (process.env['DC_ACCOUNTS_DIR']) {
 
 export const NODE_ENV = (process.env['NODE_ENV'] ?? 'production').toLowerCase()
 
-if (!existsSync(DATA_DIR)) {
-  // eslint-disable-next-line no-console
-  console.log(
-    '\n[ERROR]: Data dir does not exist, make sure you follow the steps in the Readme file\n'
-  )
-  process.exit(1)
+try {
+  mkdirSync(DATA_DIR)
+} catch (err: any) {
+  if (err.code !== 'EEXIST') {
+    throw err
+  }
 }
-
 mkdirSync(LOGS_DIR, { recursive: true })
 
 if (
+  !DC_FRONTEND_NO_TLS &&
   !existsSync(PRIVATE_CERTIFICATE_KEY) &&
   !process.env['PRIVATE_CERTIFICATE_KEY']
 ) {
   // eslint-disable-next-line no-console
   console.log(
-    `\n[ERROR]: Certificate at "${PRIVATE_CERTIFICATE_KEY}" not exist, make sure you follow the steps in the Readme file\n`
+    `\n[ERROR]: Certificate at "${PRIVATE_CERTIFICATE_KEY}" not exist, make sure you follow the steps in the Readme file. Or consider DC_FRONTEND_NO_TLS=true.\n`
   )
   process.exit(1)
 }

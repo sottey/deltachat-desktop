@@ -28,7 +28,7 @@ import useMessage from '../../hooks/chat/useMessage'
 import useChat from '../../hooks/chat/useChat'
 import { useDraft, type DraftObject } from '../../hooks/chat/useDraft'
 
-import type { EmojiData, BaseEmoji } from 'emoji-mart/index'
+import type { EmojiMartData } from '../EmojiPicker'
 import { VisualVCardComponent } from '../message/VCard'
 import { ActionEmitter, KeybindAction } from '../../keybindings'
 import useKeyBindingAction from '../../hooks/useKeyBindingAction'
@@ -45,7 +45,7 @@ import {
   AudioRecorderError,
 } from '../AudioRecorder/AudioRecorder'
 import AlertDialog from '../dialogs/AlertDialog'
-import { unknownErrorToString } from '../helpers/unknownErrorToString'
+import { unknownErrorToString } from '@deltachat-desktop/shared/unknownErrorToString'
 
 const log = getLogger('renderer/composer')
 
@@ -305,11 +305,28 @@ const Composer = forwardRef<
   })
 
   const onEmojiIconClick = () => setShowEmojiPicker(!showEmojiPicker)
+  const onStickerClick = useCallback(
+    async (stickerPath: string) => {
+      const quotedMessageId =
+        draftState.quote?.kind === 'WithMessage'
+          ? draftState.quote.messageId
+          : null
+      await sendMessage(accountId, chatId, {
+        file: stickerPath,
+        viewtype: 'Sticker',
+        quotedMessageId,
+      })
+      if (quotedMessageId) {
+        removeQuote()
+      }
+    },
+    [accountId, chatId, draftState.quote, removeQuote, sendMessage]
+  )
   const shiftPressed = useRef(false)
-  const onEmojiSelect = (emoji: EmojiData) => {
+  const onEmojiSelect = (emoji: EmojiMartData) => {
     log.debug(`EmojiPicker: Selected ${emoji.id}`)
     currentComposerMessageInputRef.current?.insertStringAtCursorPosition(
-      (emoji as BaseEmoji).native
+      emoji.native
     )
     if (!shiftPressed.current) {
       setShowEmojiPicker(false)
@@ -389,8 +406,15 @@ const Composer = forwardRef<
 
   useEffect(() => {
     if (!showEmojiPicker) return
-    const onClick = (e: MouseEvent) => {
+
+    // We use `mousedown` instead of `click` for outside-click detection
+    // because by the time a `click` fires, React may have already flushed
+    // state updates and removed dialogs/context menus from the DOM, making
+    // it impossible to check whether the click originated inside one.
+    const onMouseDown = (e: MouseEvent) => {
       if (!emojiAndStickerRef.current) return
+      // Don't close when interacting with dialogs or context menus
+      if ((e.target as Element).closest?.('dialog') != null) return
       // The same approach as in `OutsideClickHelper`.
       const clickIsOutSideEmojiPicker = !emojiAndStickerRef.current.contains(
         e.target as Node
@@ -399,14 +423,14 @@ const Composer = forwardRef<
     }
 
     // `setTimeout` to work around the fact that otherwise we'd catch
-    // the "click" event that caused the emoji picker to open
+    // the event that caused the emoji picker to open
     // in the first place, resulting in it getting closed immediately.
     const timeoutId = setTimeout(() => {
-      document.addEventListener('click', onClick)
+      document.addEventListener('mousedown', onMouseDown)
     })
     return () => {
       clearTimeout(timeoutId)
-      document.removeEventListener('click', onClick)
+      document.removeEventListener('mousedown', onMouseDown)
     }
   }, [showEmojiPicker, emojiAndStickerRef])
 
@@ -417,7 +441,7 @@ const Composer = forwardRef<
         const downloadUrl = AppStoreUrl + appInfo.cache_relname
         const responseP = BackendRemote.rpc.getHttpResponse(
           selectedAccountId(),
-          AppStoreUrl + appInfo.cache_relname
+          downloadUrl
         )
         let response: Awaited<typeof responseP>
         try {
@@ -561,7 +585,7 @@ const Composer = forwardRef<
           type='button'
           className='contact-request-button accept'
           onClick={() => {
-            EffectfulBackendActions.acceptChat(selectedAccountId(), chatId)
+            BackendRemote.rpc.acceptChat(selectedAccountId(), chatId)
           }}
         >
           {tx('accept')}
@@ -604,7 +628,10 @@ const Composer = forwardRef<
                   {'text' in draftState.quote && (
                     <Quote quote={draftState.quote} tabIndex={0} />
                   )}
-                  <CloseButton onClick={removeQuote} />
+                  <CloseButton
+                    onClick={removeQuote}
+                    aria-label={tx('remove_quote')}
+                  />
                 </section>
               )}
               {draftState.file && !draftState.vcardContact && (
@@ -616,7 +643,10 @@ const Composer = forwardRef<
                   {/* <p>file: {draftState.file}</p> */}
                   {/* {draftState.viewType} */}
                   <DraftAttachment attachment={draftState} />
-                  <CloseButton onClick={removeFile} />
+                  <CloseButton
+                    onClick={removeFile}
+                    aria-label={tx('remove_attachment')}
+                  />
                 </section>
               )}
               {draftState.vcardContact && (
@@ -627,7 +657,10 @@ const Composer = forwardRef<
                   <VisualVCardComponent
                     vcardContact={draftState.vcardContact}
                   />
-                  <CloseButton onClick={removeFile} />
+                  <CloseButton
+                    onClick={removeFile}
+                    aria-label={tx('remove_attachment')}
+                  />
                 </section>
               )}
             </>
@@ -799,6 +832,7 @@ const Composer = forwardRef<
             // The way the sticker picker currently works is that
             // it simply sends a message when you click on a sticker.
             hideStickerPicker={messageEditing.isEditingModeActive}
+            onStickerClick={onStickerClick}
           />
         )}
       </section>

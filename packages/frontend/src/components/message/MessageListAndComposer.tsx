@@ -90,7 +90,7 @@ export function getBackgroundImageStyle(
 }
 
 function isImage(file: ParsedPath) {
-  return IMAGE_EXTENSIONS.map(ext => '.' + ext).includes(file.ext)
+  return IMAGE_EXTENSIONS.map(ext => '.' + ext).includes(file.ext.toLowerCase())
 }
 
 export default function MessageListAndComposer({ accountId, chat }: Props) {
@@ -124,7 +124,6 @@ export default function MessageListAndComposer({ accountId, chat }: Props) {
     messageListState,
     accountId,
     chat.id,
-    chat.isContactRequest,
     chat.canSend,
     regularMessageInputRef
   )

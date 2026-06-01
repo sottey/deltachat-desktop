@@ -1,26 +1,24 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { C } from '@deltachat/jsonrpc-client'
 
+import { getLogger } from '@deltachat-desktop/shared/logger'
 import { BackendRemote } from '../../../backend-com'
 import { selectedAccountId } from '../../../ScreenController'
-import { confirmForwardMessage } from '../../message/messageFunctions'
-import { getConfiguredAccounts } from '../../../backend/account'
+import { confirmDialog } from '../../message/messageFunctions'
 import { saveLastChatId } from '../../../backend/chat'
 import useChat from '../../../hooks/chat/useChat'
 import useDialog from '../../../hooks/dialog/useDialog'
 import useMessage from '../../../hooks/chat/useMessage'
 import useTranslationFunction from '../../../hooks/useTranslationFunction'
-import SelectAccountDialog from '../SelectAccountDialog'
 
 import type { T } from '@deltachat/jsonrpc-client'
 import type { DialogProps } from '../../../contexts/DialogContext'
 import SelectChat from '../SelectChat'
 
-import styles from './styles.module.scss'
-import { useRpcFetch } from '../../../hooks/useFetch'
-import { Avatar } from '../../Avatar'
 import AlertDialog from '../AlertDialog'
-import { unknownErrorToString } from '../../helpers/unknownErrorToString'
+import { unknownErrorToString } from '@deltachat-desktop/shared/unknownErrorToString'
+
+const log = getLogger('ForwardMessage')
 
 type ForwardMessageProps = {
   message: T.Message
@@ -31,38 +29,19 @@ export default function ForwardMessage(props: ForwardMessageProps) {
   const { message, onClose } = props
 
   const currentAccountId = selectedAccountId()
-  const [targetAccountId, setTargetAccountId] = useState(currentAccountId)
 
   const tx = useTranslationFunction()
   const { openDialog } = useDialog()
   const { selectChat } = useChat()
-  const { forwardMessage, jumpToMessage } = useMessage()
+  const { jumpToMessage } = useMessage()
 
-  const configuredAccountsFetch = useRpcFetch(getConfiguredAccounts, [])
-
-  const hasMultipleAccounts = configuredAccountsFetch.result?.ok
-    ? configuredAccountsFetch.result.value.length > 1
-    : false
-
-  const onSwitchAccount = () => {
-    openDialog(SelectAccountDialog, {
-      onSelect: (accountId: number) => {
-        setTargetAccountId(accountId)
-      },
-    })
-  }
-  const accountFetch = useRpcFetch(BackendRemote.rpc.getAccountInfo, [
+  const onChatClick = async ({
     targetAccountId,
-  ])
-  const accountInfo = accountFetch.lingeringResult?.ok
-    ? accountFetch.lingeringResult.value
-    : null
-  const color =
-    accountInfo?.kind === 'Configured'
-      ? accountInfo?.color || undefined
-      : undefined
-
-  const onChatClick = async (chatId: number) => {
+    chatId,
+  }: {
+    targetAccountId: number
+    chatId: number
+  }) => {
     const isCrossAccountForward = targetAccountId !== currentAccountId
 
     const chat = await BackendRemote.rpc.getBasicChatInfo(
@@ -85,14 +64,36 @@ export default function ForwardMessage(props: ForwardMessageProps) {
       if (!isCrossAccountForward) {
         selectChat(currentAccountId, chat.id)
       }
-      const yes = await confirmForwardMessage(
+      const yes = await confirmDialog(
         openDialog,
-        currentAccountId,
-        message,
-        chat,
-        isCrossAccountForward ? targetAccountId : undefined
+        tx('ask_forward', [chat.name]),
+        tx('forward')
       )
       if (yes) {
+        try {
+          if (isCrossAccountForward) {
+            // Cross-account forward
+            await BackendRemote.rpc.forwardMessagesToAccount(
+              currentAccountId,
+              [message.id],
+              targetAccountId,
+              chat.id
+            )
+          } else {
+            // Same-account forward
+            await BackendRemote.rpc.forwardMessages(
+              currentAccountId,
+              [message.id],
+              chat.id
+            )
+          }
+        } catch (e) {
+          log.error('error forwarding message:', e)
+          void openDialog(AlertDialog, {
+            message: unknownErrorToString(e),
+          })
+          return false
+        }
         // get the (new) id of forwarded message
         // and jump to the message
         const messageIds = await BackendRemote.rpc.getMessageIds(
@@ -147,7 +148,11 @@ export default function ForwardMessage(props: ForwardMessageProps) {
             chat.id
           )
         } else {
-          await forwardMessage(currentAccountId, message.id, chat.id)
+          await BackendRemote.rpc.forwardMessages(
+            currentAccountId,
+            [message.id],
+            chat.id
+          )
         }
       } catch (e) {
         void openDialog(AlertDialog, {
@@ -158,36 +163,13 @@ export default function ForwardMessage(props: ForwardMessageProps) {
     }
   }
 
-  const accountSwitch =
-    hasMultipleAccounts && accountInfo?.kind === 'Configured' ? (
-      <div className={styles.switchAccountContainer} onClick={onSwitchAccount}>
-        <button
-          type='button'
-          className={styles.switchAccountButton}
-          data-testid='switch-account-button'
-        >
-          <span className={styles.switchAccountText}>
-            {tx('switch_account')}
-          </span>
-        </button>
-        <Avatar
-          displayName={accountInfo?.displayName || ''}
-          avatarPath={accountInfo?.profileImage || undefined}
-          color={color}
-          small
-        />
-      </div>
-    ) : undefined
-
   return (
     <SelectChat
       headerTitle={tx('forward_to')}
       onChatClick={onChatClick}
       onClose={onClose}
       listFlags={C.DC_GCL_FOR_FORWARDING | C.DC_GCL_NO_SPECIALS}
-      accountId={targetAccountId}
-      accountSwitch={accountSwitch}
-      key={targetAccountId}
+      enableAccountSwitch
     />
   )
 }

@@ -22,7 +22,9 @@ import RuntimeAdapter from './components/RuntimeAdapter'
 import { ChatProvider, UnselectChat } from './contexts/ChatContext'
 import { ContextMenuProvider } from './contexts/ContextMenuContext'
 import { InstantOnboardingProvider } from './contexts/InstantOnboardingContext'
+import { MediaPlayerMutexProvider } from './contexts/MediaPlayerMutexContext'
 import { SmallScreenModeMacOSTitleBar } from './components/SmallScreenModeMacOSTitleBar'
+import { NextVoiceMessagePlayerProvider } from './contexts/NextVoiceMessagePlayerContext'
 
 const log = getLogger('renderer/ScreenController')
 
@@ -144,8 +146,6 @@ export default class ScreenController extends Component {
       await this.unSelectAccount()
       this.selectedAccountId = accountId
       ;(window.__selectedAccountId as number) = accountId
-      // forcing to load settings here so when we for example switch to Settings
-      // from context menu they're already present and we avoid crashing
       SettingsStoreInstance.effect.load()
     } else {
       log.info('account is already selected')
@@ -173,6 +173,14 @@ export default class ScreenController extends Component {
       return
     }
 
+    // Since we automatically invalidate `chatId` when `accountId` changes
+    // in `ChatContext`, one might think that it's not necessary
+    // to explicitly `unselectChat()` here.
+    // But apparently without this we still get `chatId` leaking between
+    // different `accountId`s, namely when loading recent app icons
+    // while rapidly switching accounts.
+    // Maybe this has to do with us using `window.__selectedAccountId`
+    // in some places and the `accountId` prop in others.
     this.unselectChatRef.current?.()
 
     const previousAccountId = this.selectedAccountId
@@ -372,28 +380,36 @@ export default class ScreenController extends Component {
               unselectChatRef={this.unselectChatRef}
             >
               <ContextMenuProvider>
-                <DialogContextProvider>
-                  <RuntimeAdapter accountId={this.selectedAccountId} />
-                  <KeybindingsContextProvider>
-                    <div className='main-container-container'>
-                      {this.state.smallScreenMode &&
-                        runtime.getRuntimeInfo().isMac && (
-                          <SmallScreenModeMacOSTitleBar />
-                        )}
-                      <div className='main-container'>
-                        <AccountListSidebar
-                          selectedAccountId={this.selectedAccountId}
-                          onAddAccount={this.addAndSelectAccount}
-                          onSelectAccount={this.selectAccount.bind(this)}
-                          openAccountDeletionScreen={this.openAccountDeletionScreen.bind(
-                            this
-                          )}
-                        />
-                        {this.renderScreen(this.selectedAccountId)}
-                      </div>
-                    </div>
-                  </KeybindingsContextProvider>
-                </DialogContextProvider>
+                {/* Note that `MediaPlayerMutexProvider`
+                must be above `DialogContextProvider`,
+                because the "Gallery" dialog is rendered
+                inside of `DialogContextProvider`. */}
+                <MediaPlayerMutexProvider>
+                  <NextVoiceMessagePlayerProvider>
+                    <DialogContextProvider>
+                      <RuntimeAdapter accountId={this.selectedAccountId} />
+                      <KeybindingsContextProvider>
+                        <div className='main-container-container'>
+                          {this.state.smallScreenMode &&
+                            runtime.getRuntimeInfo().isMac && (
+                              <SmallScreenModeMacOSTitleBar />
+                            )}
+                          <div className='main-container'>
+                            <AccountListSidebar
+                              selectedAccountId={this.selectedAccountId}
+                              onAddAccount={this.addAndSelectAccount}
+                              onSelectAccount={this.selectAccount.bind(this)}
+                              openAccountDeletionScreen={this.openAccountDeletionScreen.bind(
+                                this
+                              )}
+                            />
+                            {this.renderScreen(this.selectedAccountId)}
+                          </div>
+                        </div>
+                      </KeybindingsContextProvider>
+                    </DialogContextProvider>
+                  </NextVoiceMessagePlayerProvider>
+                </MediaPlayerMutexProvider>
               </ContextMenuProvider>
             </ChatProvider>
           </InstantOnboardingProvider>

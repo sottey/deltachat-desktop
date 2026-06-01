@@ -26,6 +26,7 @@
     <string name="archive">ఆర్కైవ్</string>
     <!-- Verb "to unarchive", as in "remove a chat from the archive", opposite of the previous string -->
     <string name="unarchive">ఆర్కైవ్ రద్దు</string>
+    <!-- Verb "to mute". used to mute a chat, so that it is silenced e.g. does not make noise or cause notifications -->
     <string name="mute">నిశబ్ధం</string>
     <string name="ephemeral_messages">అదృశ్యమవుతున్న సందేశాలు</string>
     <string name="save">భద్రపరుచు</string>
@@ -58,6 +59,7 @@
     <string name="image">చిత్రం</string>
     <string name="gif">Gif</string>
     <string name="images">చిత్రాలు</string>
+    <!-- a noun, used for "Music" and other "Audio" files -->
     <string name="audio">ఆడియో</string>
     <string name="voice_message">మాట సందేశం</string>
     <string name="forwarded_message">ఫార్వర్డ్ చేయబడిన సందేసం</string>
@@ -120,6 +122,7 @@
     <string name="mute_for_eight_hours">8 గంటలు నిశబ్దంగా ఉంచు</string>
     <string name="mute_for_one_day">1 రోజు నిశబ్దంగా ఉంచు</string>
     <string name="mute_for_seven_days">7 రోజులు నిశబ్దంగా ఉంచు</string>
+    <!-- deprecated, use ask_forward_messages -->
     <string name="ask_forward">సందేశాలు %1$s ఫార్వర్డ్ చేయాలా?</string>
     <string name="ask_block_contact">మీరు ఈ పరిచయాన్ని రద్దుచేయాలని నిర్ణయించుకున్నారా?</string>
     <!-- contact list -->
@@ -136,6 +139,7 @@
     <string name="search">వెతుకు</string>
     <!-- create/edit groups, contact/group profile -->
     <string name="group_name">సమూహం పేరు</string>
+    <!-- deprecated, use please_enter_chat_name -->
     <string name="group_please_enter_group_name">సమూహానికి పేరు పెట్టు</string>
     <string name="group_add_members">సభ్యుడిని జత చేయి</string>
     <string name="profile_encryption">ఎన్క్రిప్షన్</string>
@@ -144,10 +148,12 @@
     <string name="tab_group">సమూహము</string>
     <string name="tab_gallery">గ్యాలరీ</string>
     <string name="media_preview">మీడియా పూర్వప్రదర్శన</string>
+    <!-- preferences -->
     <string name="pref_profile_info_headline">మీ రూప సమాచారం</string>
     <string name="pref_profile_photo">రూపచిత్రం</string>
     <string name="pref_blocked_contacts">నిరోధించిన పరిచయాలు</string>
     <string name="pref_your_name">మీ పేరు</string>
+    <!-- Option name for changing behaviour of the "Enter key" to sending out a message directly (instead of adding new line). If in doubt, please refer to a similar option in other messengers. -->
     <string name="pref_enter_sends">\"ఎంటర్\" నొక్కితే పంపు</string>
     <string name="pref_vibrate">వైబ్రేషన్</string>
     <string name="pref_screen_security">స్క్రీన్ భద్రత</string>
@@ -160,8 +166,6 @@
     <string name="pref_sound">శబ్ధం</string>
     <string name="pref_silent">మౌనం</string>
     <string name="pref_privacy">గోప్యత</string>
-    <!-- deprecated, use pref_chats -->
-    <string name="pref_chats_and_media">ముచ్చట్లు మరియు ప్రసార మాధ్యమం</string>
     <!-- Translators: as in "opposite of dark" -->
     <string name="pref_light_theme">లైటు</string>
     <string name="pref_dark_theme">గుప్తమైన</string>
@@ -180,7 +184,7 @@
     <!-- No need to translate "Wallpaper" literally. Chose what is common in your language for a "Wallpaper" or a "Background". Avoid adding the term "image" here, as the "Wallpaper" may also be just a single color. -->
     <string name="pref_background">చాట్ నేపధ్యం</string>
     <string name="qrscan_fingerprint_label">ఫింగర్‌ప్రింట్స్</string>
-    <!-- notifications  -->
+    <!-- notifications -->
     <string name="notify_reply_button">జవాబు</string>
     <string name="notify_new_message">కొత్త సందేశం</string>
     <string name="notify_priority_high">అధికం</string>

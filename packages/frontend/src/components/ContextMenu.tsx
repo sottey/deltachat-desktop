@@ -72,8 +72,6 @@ type ContextMenuLevel = {
  */
 export type OpenContextMenu = (args: showFnArguments) => Promise<void>
 
-const ScrollKeysToBlock = ['PageUp', 'PageDown', 'End', 'Home']
-
 export function ContextMenuLayer({
   setShowFunction,
 }: {
@@ -84,9 +82,14 @@ export function ContextMenuLayer({
   const cursorY = useRef<number>(0)
 
   const [currentItems, setCurrentItems] = useState<ContextMenuItem[]>([])
-  const [position, setPosition] = useState<{ top: number; left: number }>({
+  const [position, setPosition] = useState<{
+    top: number
+    left: number
+    rightLimit: number
+  }>({
     top: 0,
     left: 0,
+    rightLimit: 0,
   })
   const [currentAriaAttrs, setCurrentAriaAttrs] = useState<
     undefined | MenuAriaAttrs
@@ -153,17 +156,16 @@ export function ContextMenuLayer({
     }
 
     // Displaying Menu
-    setPosition({ top, left })
+    const rightLimit =
+      layerRef.current.clientLeft + layerRef.current.clientWidth
+    setPosition({ top, left, rightLimit })
   }, [])
 
   const cancel = useCallback((evt?: React.MouseEvent) => {
     // Prevent default since ContextMenuLayer is only visible
     // when a context menu is already open
     evt?.preventDefault()
-    window.__setContextMenuActive(false)
-    setCurrentItems([])
     layerRef.current?.close()
-    endPromiseRef.current?.()
   }, [])
 
   useEffect(() => {
@@ -177,6 +179,11 @@ export function ContextMenuLayer({
       ref={layerRef}
       className='dc-context-menu-layer'
       onClick={cancel}
+      onClose={() => {
+        window.__setContextMenuActive(false)
+        setCurrentItems([])
+        endPromiseRef.current?.()
+      }}
       onContextMenuCapture={cancel}
       // The `<dialog>` is only used to make sure that the menu is on top
       // of other content, and to trap focus.
@@ -185,10 +192,7 @@ export function ContextMenuLayer({
     >
       {currentItems.length > 0 && (
         <ContextMenu
-          rightLimit={
-            (layerRef.current as HTMLElement).clientLeft +
-            (layerRef.current as HTMLElement).clientWidth
-          }
+          rightLimit={position.rightLimit}
           top={position.top}
           left={position.left}
           items={currentItems}
@@ -363,14 +367,6 @@ export function ContextMenu(props: {
             keyboardFocus.current = 0
           }
         }
-      } else if (ev.code === 'Escape') {
-        closeCallback()
-        keyboardFocus.current = -1
-      }
-      // preventDefaultForScrollKeys
-      else if (ScrollKeysToBlock.includes(ev.code)) {
-        ev.preventDefault()
-        return false
       }
     }
 
@@ -378,7 +374,7 @@ export function ContextMenu(props: {
     return () => {
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [openSublevels, closeCallback, expandMenu])
+  }, [openSublevels, expandMenu])
 
   return (
     <div>
@@ -435,7 +431,9 @@ export function ContextMenu(props: {
                 tabIndex={-1}
                 data-testid={item.dataTestid}
                 role='menuitem'
-                key={index}
+                // Context menus are not expected to change,
+                // so it's fine to have index-based keys.
+                key={item.dataTestid ?? index}
                 aria-haspopup={item.subitems ? 'menu' : undefined}
                 aria-expanded={item.subitems ? isExpanded : undefined}
                 {...(item.subitems && { 'data-expandable-index': index })}
@@ -506,28 +504,7 @@ export function useContextMenuWithActiveState(
   }
 }
 
-/**
- * disables scrolling on the app as long as the component is mounted
- * inspired by https://stackoverflow.com/a/4770179
- *
- * this is outside of an use function because
- * for some reason removing the listeners doesn't work for those
- */
-function preventDefault(e: Event) {
-  e.preventDefault()
-}
-const wheelEvent: 'wheel' | 'mousewheel' =
-  'onwheel' in document.createElement('div') ? 'wheel' : 'mousewheel'
-
 window.__setContextMenuActive = (newVal: boolean): void => {
-  if (newVal) {
-    // Adding the same listener twice in a row has no effect.
-    document.addEventListener(wheelEvent, preventDefault, { passive: false })
-    document.addEventListener('touchmove', preventDefault, { passive: false })
-  } else {
-    document.removeEventListener(wheelEvent, preventDefault)
-    document.removeEventListener('touchmove', preventDefault)
-  }
   type Writable<T> = {
     -readonly [P in keyof T]: T[P]
   }

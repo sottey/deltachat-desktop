@@ -49,10 +49,6 @@ class RealtimeListener {
   // setup is finished
   let is_ready = false
 
-  // used to replace the location.href of the iframe if
-  // setLocation was called before all connections were filled
-  let locationUrl = ''
-
   /**
    * @type {Parameters<import('@webxdc/types').Webxdc["setUpdateListener"]>[0]|null}
    */
@@ -243,7 +239,14 @@ class RealtimeListener {
   }
 
   contextBridge.exposeInMainWorld('webxdc_internal', {
-    setup: (selfAddr, selfName, sendUpdateInterval, sendUpdateMaxSize) => {
+    setup: (
+      selfAddr,
+      selfName,
+      sendUpdateInterval,
+      sendUpdateMaxSize,
+      isAppSender,
+      isBroadcast
+    ) => {
       if (is_ready) {
         return
       }
@@ -251,26 +254,12 @@ class RealtimeListener {
       api.selfName = Buffer.from(selfName, 'base64').toString('utf-8')
       api.sendUpdateInterval = sendUpdateInterval
       api.sendUpdateMaxSize = sendUpdateMaxSize
+      api.isAppSender = isAppSender
+      api.isBroadcast = isBroadcast
 
       // be sure that webxdc.js was included
       contextBridge.exposeInMainWorld('webxdc', api)
       is_ready = true
-
-      window.frames[0].window.addEventListener('keydown', keydown_handler)
-    },
-    setInitialIframeSrc: async () => {
-      const iframe = document.getElementById('frame')
-      iframe.src = locationUrl !== '' ? locationUrl : 'index.html'
-      iframe.contentWindow.window.addEventListener('keydown', keydown_handler)
-    },
-    /**
-     * called via webContents.executeJavaScript
-     */
-    setLocationUrl(base64EncodedHref) {
-      locationUrl = Buffer.from(base64EncodedHref, 'base64').toString('utf8')
-      if (locationUrl && locationUrl !== '') {
-        window.frames[0].window.location = locationUrl
-      }
     },
   })
 
@@ -281,14 +270,6 @@ class RealtimeListener {
   }
 
   window.addEventListener('keydown', keydown_handler)
-  window.onload = () => {
-    const frame = document.getElementById('frame')
-    if (frame) {
-      frame.contentWindow.window.addEventListener('keydown', keydown_handler)
-    } else {
-      console.log('attaching F12 handler failed, frame not found')
-    }
-  }
 
   contextBridge.exposeInMainWorld('webxdc_custom', {
     /**

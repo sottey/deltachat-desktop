@@ -2,7 +2,6 @@ import React, {
   useRef,
   useCallback,
   useLayoutEffect,
-  RefObject,
   useEffect,
   useState,
   useMemo,
@@ -24,51 +23,14 @@ import { useHasChanged2 } from '../../hooks/useHasChanged'
 import { useReactionsBar } from '../ReactionsBar'
 import EmptyChatMessage from './EmptyChatMessage'
 
-const log = getLogger('render/components/message/MessageList')
+const log = getLogger('renderer/components/message/MessageList')
 
 import type { T } from '@deltachat/jsonrpc-client'
 import {
   RovingTabindexProvider,
   useRovingTabindex,
 } from '../../contexts/RovingTabindex'
-import { markChatAsSeen } from '../../backend/chat'
-
-const onWindowFocus = (accountId: number) => {
-  log.debug('window focused')
-  const messageElements: HTMLElement[] = Array.prototype.slice.call(
-    document.querySelectorAll('#message-list .message-observer-bottom')
-  )
-
-  const visibleElements = messageElements.filter(el => {
-    const rect = el.getBoundingClientRect()
-    return (
-      rect.top >= 0 &&
-      rect.left >= 0 &&
-      rect.bottom <=
-        (window.innerHeight || document.documentElement.clientHeight) &&
-      rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-    )
-  })
-
-  const messageIdsToMarkAsRead = visibleElements
-    .map(el =>
-      el.dataset.messageid ? Number.parseInt(el.dataset.messageid) : undefined
-    )
-    .filter(id => id != undefined)
-
-  if (messageIdsToMarkAsRead.length !== 0) {
-    log.debug(
-      `window was focused: marking ${messageIdsToMarkAsRead.length} visible messages as read`,
-      messageIdsToMarkAsRead
-    )
-    // FYI we also listen for `MsgsNoticed` event
-    // to update the badge counter,
-    // so `.then(debouncedUpdateBadgeCounter)` is probably not necessary.
-    BackendRemote.rpc
-      .markseenMsgs(accountId, messageIdsToMarkAsRead)
-      .then(throttledUpdateBadgeCounter)
-  }
-}
+import { marknoticedChat } from '../../backend/chat'
 
 /**
  * Returns a "live" version of `FullChat.freshMessageCounter`.
@@ -80,8 +42,10 @@ function useUnreadCount(
   accountId: number,
   chat: Pick<T.FullChat, 'freshMessageCounter' | 'id'>
 ) {
-  const [updatedValue, setUpdatedValue] = useState<number | null>(null)
-  const updatedValueForChat = useRef<typeof chat>(null)
+  const [cachedData, setCachedData] = useState<{
+    chat: typeof chat
+    count: number
+  } | null>(null)
 
   useEffect(() => {
     let outdated = false
@@ -90,8 +54,7 @@ function useUnreadCount(
       if (chat.id === eventChatId) {
         const count = await BackendRemote.rpc.getFreshMsgCnt(accountId, chat.id)
         if (!outdated) {
-          setUpdatedValue(count)
-          updatedValueForChat.current = chat
+          setCachedData({ chat, count })
         }
       }
     }
@@ -109,9 +72,7 @@ function useUnreadCount(
     return () => cleanup.forEach(off => off())
   }, [accountId, chat])
 
-  return updatedValueForChat.current === chat && updatedValue != null
-    ? updatedValue
-    : chat.freshMessageCounter
+  return cachedData?.chat === chat ? cachedData.count : chat.freshMessageCounter
 }
 
 type Props = {
@@ -159,86 +120,107 @@ export default function MessageList({
    */
   const maxScrollToBottomDistanceConsideredShort = 10
 
-  const onUnreadMessageInView: IntersectionObserverCallback = entries => {
-    if (!chat) return
-    // Don't mark messages as read if window is not focused
-    if (document.hasFocus() === false) return
+  const onUnreadMessageInView: IntersectionObserverCallback = useCallback(
+    (entries, observer) => {
+      if (!chat?.id) return
+      // Don't mark messages as read if window is not focused
+      if (document.hasFocus() === false) return
 
-    if (scheduler.isLocked('scroll') === true) {
-      //console.log('onScroll: locked, returning')
-      return
-    }
-
-    setTimeout(() => {
-      log.debug(`onUnreadMessageInView: entries.length: ${entries.length}`)
-
-      const messageIdsToMarkAsRead = []
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue
-        if (!(entry.target instanceof HTMLElement)) {
-          log.error(
-            'onUnreadMessageInView: entry.target is not HTMLElement:',
-            entry.target
-          )
-          continue
-        }
-        const messageId = entry.target.dataset.messageid
-          ? Number.parseInt(entry.target.dataset.messageid)
-          : undefined
-        if (messageId == undefined || !Number.isSafeInteger(messageId)) {
-          log.error(
-            'onUnreadMessageInView: failed to get message id from element',
-            entry.target
-          )
-          continue
-        }
-        const messageHeight = entry.target.clientHeight
-
-        log.debug(
-          `onUnreadMessageInView: messageId ${messageId} height: ${messageHeight} intersectionRate: ${entry.intersectionRatio}`
-        )
-        log.debug(
-          `onUnreadMessageInView: messageId ${messageId} marking as read`
-        )
-
-        messageIdsToMarkAsRead.push(messageId)
-        if (unreadMessageInViewIntersectionObserver.current === null) continue
-        unreadMessageInViewIntersectionObserver.current.unobserve(entry.target)
+      if (scheduler.isLocked('scroll') === true) {
+        //console.log('onScroll: locked, returning')
+        return
       }
 
-      if (messageIdsToMarkAsRead.length > 0) {
-        const chatId = chat?.id
-        if (!chatId) return
-        // FYI we also listen for `MsgsNoticed` event
-        // to update the badge counter,
-        // so `.then(debouncedUpdateBadgeCounter)` is probably not necessary.
-        BackendRemote.rpc
-          .markseenMsgs(accountId, messageIdsToMarkAsRead)
-          .then(throttledUpdateBadgeCounter)
-      }
-    })
-  }
-  const unreadMessageInViewIntersectionObserver: RefObject<IntersectionObserver> =
-    useRef(
-      new IntersectionObserver(onUnreadMessageInView, {
-        root: null,
-        rootMargin: '0px',
-        threshold: [0, 1],
+      setTimeout(() => {
+        log.debug(`onUnreadMessageInView: entries.length: ${entries.length}`)
+
+        const messageIdsToMarkAsRead = []
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue
+          if (!(entry.target instanceof HTMLElement)) {
+            log.error(
+              'onUnreadMessageInView: entry.target is not HTMLElement:',
+              entry.target
+            )
+            continue
+          }
+          const messageId = entry.target.dataset.messageid
+            ? Number.parseInt(entry.target.dataset.messageid)
+            : undefined
+          if (messageId == undefined || !Number.isSafeInteger(messageId)) {
+            log.error(
+              'onUnreadMessageInView: failed to get message id from element',
+              entry.target
+            )
+            continue
+          }
+          const messageHeight = entry.target.clientHeight
+
+          log.debug(
+            `onUnreadMessageInView: messageId ${messageId} height: ${messageHeight} intersectionRate: ${entry.intersectionRatio}`
+          )
+          log.debug(
+            `onUnreadMessageInView: messageId ${messageId} marking as read`
+          )
+
+          messageIdsToMarkAsRead.push(messageId)
+          observer.unobserve(entry.target)
+        }
+
+        if (messageIdsToMarkAsRead.length > 0) {
+          const chatId = chat?.id
+          if (!chatId) return
+          // FYI we also listen for `MsgsNoticed` event
+          // to update the badge counter,
+          // so `.then(debouncedUpdateBadgeCounter)` is probably not necessary.
+          BackendRemote.rpc
+            .markseenMsgs(accountId, messageIdsToMarkAsRead)
+            .then(throttledUpdateBadgeCounter)
+        }
       })
+    },
+    [accountId, chat.id, scheduler]
+  )
+  const unreadMessageInViewIntersectionObserver = useMemo(() => {
+    log.debug('Creating unreadMessageInViewIntersectionObserver')
+
+    return new IntersectionObserver(onUnreadMessageInView, {
+      root: null,
+      rootMargin: '0px',
+      threshold: [0, 1],
+    })
+  }, [onUnreadMessageInView])
+
+  // re-initializes the observer on all messages that are currently in the
+  // viewport and unread, so that they get marked as read if they are still
+  // in the viewport after the lock is released or the window regains focus.
+  // This is needed since on some conditions (e.g. window not focused, scroll
+  // lock) the `onUnreadMessageInView` callback returns early without marking
+  // messages as read, even if they are in view.
+  const reInvokeAllUnreadObservations = useCallback(() => {
+    const elements = document.querySelectorAll(
+      '#message-list .message-observer-bottom'
     )
+    for (const el of elements) {
+      // Calling `unobserve()` followed by `observe()` invokes the
+      // IntersectionObserver callback with the current intersection status
+      // of the element,
+      unreadMessageInViewIntersectionObserver.unobserve(el)
+      unreadMessageInViewIntersectionObserver.observe(el)
+    }
+  }, [unreadMessageInViewIntersectionObserver])
 
   useEffect(() => {
-    const onFocus = onWindowFocus.bind(null, accountId)
-    window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
-  }, [accountId])
+    window.addEventListener('focus', reInvokeAllUnreadObservations)
+    return () =>
+      window.removeEventListener('focus', reInvokeAllUnreadObservations)
+  }, [reInvokeAllUnreadObservations])
 
   useEffect(() => {
     return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      unreadMessageInViewIntersectionObserver.current?.disconnect()
+      unreadMessageInViewIntersectionObserver.disconnect()
     }
-  }, [])
+  }, [unreadMessageInViewIntersectionObserver])
 
   const maybeJumpToMessageHack = () => {
     // FYI there is similar code in `messagelist.ts`.
@@ -280,74 +262,68 @@ export default function MessageList({
   const pendingProgrammaticSmoothScrollTo = useRef<null | number>(null)
   const pendingProgrammaticSmoothScrollTimeout = useRef<number>(-1)
 
-  const onScroll = useCallback(
-    (ev: React.UIEvent<HTMLDivElement> | null) => {
-      if (!messageListRef.current) {
-        return
-      }
-      if (scheduler.isLocked('scroll') === true) {
-        return
-      }
+  const onScroll = useCallback(() => {
+    if (!messageListRef.current) {
+      return
+    }
+    if (scheduler.isLocked('scroll') === true) {
+      return
+    }
 
-      // We might call `onScroll` manually with `null` argument.
-      // We only want to hide the reactions bar when _the user_ scrolls,
-      // intentionally.
-      if (ev) hideReactionsBar()
+    const distanceToTop = messageListRef.current.scrollTop
+    const distanceToBottom =
+      messageListRef.current.scrollHeight -
+      messageListRef.current.scrollTop -
+      messageListRef.current.clientHeight
 
-      const distanceToTop = messageListRef.current.scrollTop
-      const distanceToBottom =
-        messageListRef.current.scrollHeight -
-        messageListRef.current.scrollTop -
-        messageListRef.current.clientHeight
-
-      const isNewestMessageLoaded =
-        newestFetchedMessageListItemIndex === messageListItems.length - 1
-      const newShowJumpDownButton =
-        !isNewestMessageLoaded ||
-        distanceToBottom > maxScrollToBottomDistanceConsideredShort
+    const isNewestMessageLoaded =
+      newestFetchedMessageListItemIndex === messageListItems.length - 1
+    const newShowJumpDownButton =
+      !isNewestMessageLoaded ||
+      distanceToBottom > maxScrollToBottomDistanceConsideredShort
+    // Don't flash the button during a programmatic smooth scroll —
+    // we already know we're scrolling to the bottom.
+    if (pendingProgrammaticSmoothScrollTo.current === null) {
       if (newShowJumpDownButton != showJumpDownButton) {
         setShowJumpDownButton(newShowJumpDownButton)
       }
-      if (!newShowJumpDownButton) {
-        clearJumpStack()
+    }
+    if (!newShowJumpDownButton) {
+      clearJumpStack()
+    }
+
+    // Remember that `distanceToTop` and `distanceToBottom` can both be true.
+    if (distanceToTop < 800) {
+      // Prevent the scroll position from "sticking" to the top,
+      // which would disable scroll anchoring, and would make
+      // the scroll position continuosuly jump to the very top and we'd
+      // continuously load older messages without the user scrolling.
+      //
+      // See https://drafts.csswg.org/css-scroll-anchoring/#suppression-triggers
+      // > A suppression trigger is an operation that suppresses
+      // > the scroll anchoring
+      // > ...
+      // > The scroll offset of the scrollable element being zero.
+      if (distanceToTop < 3) {
+        messageListRef.current.scrollTop = 3
       }
 
-      // Remember that `distanceToTop` and `distanceToBottom` can both be true.
-      if (distanceToTop < 800) {
-        // Prevent the scroll position from "sticking" to the top,
-        // which would disable scroll anchoring, and would make
-        // the scroll position continuosuly jump to the very top and we'd
-        // continuously load older messages without the user scrolling.
-        //
-        // See https://drafts.csswg.org/css-scroll-anchoring/#suppression-triggers
-        // > A suppression trigger is an operation that suppresses
-        // > the scroll anchoring
-        // > ...
-        // > The scroll offset of the scrollable element being zero.
-        if (distanceToTop < 3) {
-          messageListRef.current.scrollTop = 3
-        }
-
-        log.debug('onScroll: Scrolled to top, fetching more messages!')
-        setTimeout(() => fetchMoreTop(), 0)
-      }
-      if (distanceToBottom < 800) {
-        log.debug('onScroll: Scrolled to bottom, fetching more messages!')
-        setTimeout(() => fetchMoreBottom(), 0)
-      }
-    },
-    [
-      clearJumpStack,
-      fetchMoreBottom,
-      fetchMoreTop,
-      hideReactionsBar,
-      messageListItems.length,
-      newestFetchedMessageListItemIndex,
-      scheduler,
-      setShowJumpDownButton,
-      showJumpDownButton,
-    ]
-  )
+      log.debug('onScroll: Scrolled to top, fetching more messages!')
+      setTimeout(() => fetchMoreTop(), 0)
+    }
+    if (distanceToBottom < 800) {
+      log.debug('onScroll: Scrolled to bottom, fetching more messages!')
+      setTimeout(() => fetchMoreBottom(), 0)
+    }
+  }, [
+    clearJumpStack,
+    fetchMoreBottom,
+    fetchMoreTop,
+    messageListItems.length,
+    newestFetchedMessageListItemIndex,
+    scheduler,
+    showJumpDownButton,
+  ])
   const onScrollEnd = useCallback((_ev: Event) => {
     clearTimeout(pendingProgrammaticSmoothScrollTimeout.current)
     pendingProgrammaticSmoothScrollTo.current = null
@@ -579,7 +555,12 @@ export default function MessageList({
         // Since the scroll position might have changed,
         // let's invoke `onScroll`, e.g. to load more messages if we're close
         // to top / bottom
-        onScroll(null)
+        onScroll()
+        // By the time this nested `setTimeout` runs, the
+        // `setTimeout(scheduler.unlock, 0)` queued by `unlockScroll()`
+        // above has already fired, so re-invoking the observer now schedules
+        // a fresh delivery with the lock released.
+        reInvokeAllUnreadObservations()
       }, 0)
     }, 0)
   }, [
@@ -590,6 +571,7 @@ export default function MessageList({
     viewState.lastKnownScrollHeight,
     viewState.scrollTo,
     isReactionsBarShown,
+    reInvokeAllUnreadObservations,
   ])
 
   useLayoutEffect(() => {
@@ -604,13 +586,9 @@ export default function MessageList({
   }, [refComposer, chat.id])
 
   useLayoutEffect(() => {
-    if (!messageListRef.current || !refComposer.current) {
+    if (!messageListRef.current) {
       return
     }
-    const composerTextarea = refComposer.current.querySelector(
-      '.create-or-edit-message-input'
-    )
-    composerTextarea && composerTextarea.focus()
     messageListRef.current.scrollTop = messageListRef.current.scrollHeight
   }, [refComposer])
 
@@ -697,6 +675,7 @@ export default function MessageList({
       <MessageListInner
         onScroll={onScroll}
         onScrollEnd={onScrollEnd}
+        onWheel={isReactionsBarShown ? hideReactionsBar : undefined}
         oldestFetchedMessageIndex={oldestFetchedMessageListItemIndex}
         messageListItems={messageListItems}
         activeView={activeView}
@@ -737,6 +716,7 @@ export const MessageListInner = React.memo(
   (props: {
     onScroll: (event: React.UIEvent<HTMLDivElement>) => void
     onScrollEnd: (event: Event) => void
+    onWheel?: React.WheelEventHandler<HTMLDivElement>
     oldestFetchedMessageIndex: number
     messageListItems: T.MessageListItem[]
     activeView: T.MessageListItem[]
@@ -744,7 +724,7 @@ export const MessageListInner = React.memo(
     messageListRef: React.RefObject<HTMLDivElement | null>
     chat: T.FullChat
     loaded: boolean
-    unreadMessageInViewIntersectionObserver: React.RefObject<IntersectionObserver | null>
+    unreadMessageInViewIntersectionObserver: IntersectionObserver
     loadMissingMessages: () => Promise<void>
   }) => {
     const tx = useTranslationFunction()
@@ -752,6 +732,7 @@ export const MessageListInner = React.memo(
     const {
       onScroll,
       onScrollEnd,
+      onWheel,
       messageListItems,
       messageCache,
       activeView,
@@ -853,6 +834,7 @@ export const MessageListInner = React.memo(
     const hasChatChanged = useHasChanged2(chat)
     const switchedChatAt = useRef(0)
     if (hasChatChanged) {
+      // eslint-disable-next-line react-hooks/purity
       switchedChatAt.current = Date.now()
     }
 
@@ -872,14 +854,24 @@ export const MessageListInner = React.memo(
 
     if (!loaded) {
       return (
-        <div id='message-list' ref={messageListRef} onScroll={onScroll2}>
+        <div
+          id='message-list'
+          ref={messageListRef}
+          onScroll={onScroll2}
+          onWheel={onWheel}
+        >
           <ol aria-label={tx('messages')}></ol>
         </div>
       )
     }
 
     return (
-      <div id='message-list' ref={messageListRef} onScroll={onScroll2}>
+      <div
+        id='message-list'
+        ref={messageListRef}
+        onScroll={onScroll2}
+        onWheel={onWheel}
+      >
         <ol aria-label={tx('messages')}>
           <RovingTabindexProvider wrapperElementRef={messageListRef}>
             {messageListItems.length === 0 && <EmptyChatMessage chat={chat} />}
@@ -934,7 +926,8 @@ export const MessageListInner = React.memo(
       prevProps.messageCache === nextProps.messageCache &&
       prevProps.oldestFetchedMessageIndex ===
         nextProps.oldestFetchedMessageIndex &&
-      prevProps.onScroll === nextProps.onScroll
+      prevProps.onScroll === nextProps.onScroll &&
+      prevProps.onWheel === nextProps.onWheel
     return areEqual
   }
 )
@@ -1057,7 +1050,7 @@ function JumpDownButton({
               // as seen, even if we're skipping over many messages
               // without the user actually seeing them.
               // See https://github.com/deltachat/deltachat-desktop/issues/3072.
-              markChatAsSeen(accountId, chat.id)
+              marknoticedChat(accountId, chat.id)
             }
           }}
           // Technically this is not always "to bottom",

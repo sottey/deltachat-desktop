@@ -9,11 +9,15 @@ import AccountNotificationStoreInstance, {
 } from '../../stores/accountNotifications'
 import { selectedAccountId } from '../../ScreenController'
 import SettingsSwitch from './SettingsSwitch'
-import SettingsHeading from './SettingsHeading'
 import SettingsSelector from './SettingsSelector'
 import SmallSelectDialog from '../SmallSelectDialog'
-import SettingsStoreInstance from '../../stores/settings'
+import SettingsStoreInstance, {
+  useSettingsStore,
+  WhoCanCallMe,
+} from '../../stores/settings'
 import useDialog from '../../hooks/dialog/useDialog'
+import CoreSettingsSwitch from './CoreSettingsSwitch'
+import { runtime } from '@deltachat-desktop/runtime-interface'
 
 type Props = {
   desktopSettings: DesktopSettingsType
@@ -21,6 +25,7 @@ type Props = {
 
 export default function Notifications({ desktopSettings }: Props) {
   const tx = useTranslationFunction()
+  const settingsStore = useSettingsStore()[0]
   const accountId = selectedAccountId()
   const { accounts } = useAccountNotificationStore()[0]!
   const isMuted = accounts[accountId]?.muted || false
@@ -65,38 +70,54 @@ export default function Notifications({ desktopSettings }: Props) {
 
   return (
     <>
-      <SettingsHeading>{tx('all_profiles')}</SettingsHeading>
-      <DesktopSettingsSwitch
-        settingsKey='notifications'
-        label={tx('pref_notifications_explain')}
-      />
-      <DesktopSettingsSwitch
-        settingsKey='showNotificationContent'
-        label={tx('pref_show_notification_content_explain')}
+      <SettingsSwitch
+        label={tx('pref_notifications')}
+        value={!isMuted}
         disabled={!desktopSettings['notifications']}
+        onChange={() => {
+          AccountNotificationStoreInstance.effect.setMuted(accountId, !isMuted)
+        }}
       />
+      <CoreSettingsSwitch
+        settingsKey='ui.mentions_enabled'
+        label={tx('pref_mention_notifications')}
+        description={tx('pref_mention_notifications_explain')}
+        disabled={isMuted || !desktopSettings['notifications']}
+        disabledValue={false}
+      />
+      {runtime.getRuntimeInfo().target === 'electron' && (
+        // Calls are only implemented on Electron.
+        // https://github.com/deltachat/deltachat-desktop/pull/6044#issuecomment-3977395069
+        <SettingsSwitch
+          label={tx('pref_calls')}
+          description={tx('pref_calls_explain')}
+          value={
+            settingsStore?.settings.who_can_call_me !== WhoCanCallMe.Nobody
+          }
+          disabled={settingsStore == undefined}
+          onChange={async (val: boolean) => {
+            await SettingsStoreInstance.effect.setCoreSetting(
+              'who_can_call_me',
+              val ? WhoCanCallMe.Contacts : WhoCanCallMe.Nobody
+            )
+          }}
+        />
+      )}
+      <SettingsSeparator></SettingsSeparator>
       <SettingsSelector
         onClick={onOpenInChatSoundsVolumeDialog.bind(null)}
         currentValue={volumeNumberToString(desktopSettings.inChatSoundsVolume)}
       >
         {tx('pref_in_chat_sounds')}
       </SettingsSelector>
-      <SettingsSeparator></SettingsSeparator>
-      <SettingsHeading>{tx('current_profile')}</SettingsHeading>
-      <SettingsSwitch
-        label={tx('menu_mute')}
-        value={isMuted}
+      <DesktopSettingsSwitch
+        settingsKey='showNotificationContent'
+        label={tx('pref_show_notification_content')}
         disabled={!desktopSettings['notifications']}
-        onChange={() => {
-          AccountNotificationStoreInstance.effect.setMuted(accountId, !isMuted)
-        }}
       />
       <DesktopSettingsSwitch
-        settingsKey='isMentionsEnabled'
-        label={tx('pref_mention_notifications')}
-        description={tx('pref_mention_notifications_explain')}
-        disabled={isMuted || !desktopSettings['notifications']}
-        disabledValue={false}
+        settingsKey='notifications'
+        label={tx('pref_notifications_explain')}
       />
     </>
   )

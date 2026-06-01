@@ -69,7 +69,6 @@ export async function updateCoreStrings() {
     [C.DC_STR_SENDING]: tx('sending'),
     [C.DC_STR_LAST_MSG_SENT_SUCCESSFULLY]: tx('last_msg_sent_successfully'),
     [C.DC_STR_ERROR]: tx('error_x'),
-    [C.DC_STR_NOT_SUPPORTED_BY_PROVIDER]: tx('not_supported_by_provider'),
     [C.DC_STR_MESSAGES]: tx('messages'),
     [C.DC_STR_BROADCAST_LIST]: tx('channel'),
     [C.DC_STR_PART_OF_TOTAL_USED]: tx('part_of_total_used'),
@@ -91,6 +90,12 @@ export async function updateCoreStrings() {
     [C.DC_STR_GROUP_LEFT_BY_OTHER]: tx('group_left_by_other'),
     [C.DC_STR_GROUP_IMAGE_DELETED_BY_YOU]: tx('group_image_deleted_by_you'),
     [C.DC_STR_GROUP_IMAGE_DELETED_BY_OTHER]: tx('group_image_deleted_by_other'),
+    [C.DC_STR_GROUP_DESCRIPTION_CHANGED_BY_YOU]: tx(
+      'chat_description_changed_by_you'
+    ),
+    [C.DC_STR_GROUP_DESCRIPTION_CHANGED_BY_OTHER]: tx(
+      'chat_description_changed_by_other'
+    ),
     [C.DC_STR_LOCATION_ENABLED_BY_YOU]: tx('location_enabled_by_you'),
     [C.DC_STR_LOCATION_ENABLED_BY_OTHER]: tx('location_enabled_by_other'),
     [C.DC_STR_EPHEMERAL_TIMER_DISABLED_BY_YOU]: tx(
@@ -164,15 +169,21 @@ export async function updateCoreStrings() {
     [C.DC_STR_CHANNEL_LEFT_BY_YOU]: tx('channel_left_by_you'),
     [C.DC_STR_CANCELED_CALL]: tx('canceled_call'),
     [C.DC_STR_DECLINED_CALL]: tx('declined_call'),
-    [C.DC_STR_INCOMING_CALL]: tx('incoming_call'),
+    [C.DC_STR_INCOMING_AUDIO_CALL]: tx('audio_call'),
+    [C.DC_STR_OUTGOING_AUDIO_CALL]: tx('audio_call'),
+    [C.DC_STR_INCOMING_VIDEO_CALL]: tx('video_call'),
+    [C.DC_STR_OUTGOING_VIDEO_CALL]: tx('video_call'),
     [C.DC_STR_MISSED_CALL]: tx('missed_call'),
-    [C.DC_STR_OUTGOING_CALL]: tx('outgoing_call'),
     [C.DC_STR_CHAT_UNENCRYPTED_EXPLANATON]: tx('chat_unencrypted_explanation'),
     [C.DC_STR_SECURE_JOIN_CHANNEL_QR_DESC]: tx('qrshow_join_channel_hint'),
     [C.DC_STR_MSG_YOU_JOINED_CHANNEL]: tx('you_joined_the_channel'),
     [C.DC_STR_REMOVE_MEMBER]: tx('remove_member_by_you'),
     [C.DC_STR_SECURE_JOIN_CHANNEL_STARTED]: tx('secure_join_channel_started'),
     [C.DC_STR_STATS_MSG_BODY]: tx('stats_msg_body'),
+
+    [C.DC_STR_CHANNEL_IMAGE_CHANGED]: tx('channel_image_changed'),
+    [C.DC_STR_CHANNEL_NAME_CHANGED]: tx('channel_name_changed'),
+    [C.DC_STR_MESSAGES_ARE_E2EE]: tx('messages_are_e2ee'),
   }
 
   await BackendRemote.rpc.setStockStrings(strings)

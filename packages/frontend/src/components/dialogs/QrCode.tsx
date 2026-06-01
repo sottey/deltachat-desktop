@@ -66,7 +66,7 @@ export default function QrCode({
   const addr = addrFetch?.result?.ok ? (addrFetch.result.value ?? '') : ''
 
   return (
-    <Dialog onClose={onClose} dataTestid='qr-dialog'>
+    <Dialog onClose={onClose} dataTestid='qr-dialog' noTopPadding>
       <div className='qr-code-switch'>
         <button
           type='button'
@@ -105,13 +105,11 @@ export function QrCodeShowQrInner({
   qrCodeSVG,
   description,
   onClose,
-  onBack,
 }: {
   qrCode: string
   qrCodeSVG?: string
   description: string
   onClose?: todo
-  onBack?: todo
 }) {
   const { userFeedback } = useContext(ScreenContext)
   const tx = useTranslationFunction()
@@ -142,6 +140,10 @@ export function QrCodeShowQrInner({
         const url = URL.createObjectURL(
           new Blob([qrCodeSVG], { type: 'image/svg+xml' })
         )
+        // setState inside an effect is needed here since
+        // Blob URL creation requires an effect for cleanup
+        // and another render is needed to display the QR code image
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSvgUrl(url)
         svgUrlRef.current = url
         return () => URL.revokeObjectURL(url)
@@ -165,7 +167,7 @@ export function QrCodeShowQrInner({
           accountId,
           qrCode,
           SCAN_CONTEXT_TYPE.DEFAULT, // no need to set a specific context here
-          onBack || onClose
+          onClose
         ),
       dataTestid: 'withdraw-qr-code',
     },
@@ -198,14 +200,15 @@ export function QrCodeShowQrInner({
   return (
     <>
       <DialogBody className='show-qr-dialog-body'>
-        <DialogContent className='show-qr-dialog-content'>
+        <DialogContent className='show-qr-dialog-content' allowTopPadding>
           {svgUrl && (
             <img
               style={{
                 width: '100%',
                 height: '100%',
                 userSelect: 'none',
-                paddingTop: '16px',
+                marginBottom: '20px',
+                marginTop: '20px',
               }}
               className='show-qr-dialog-qr-image'
               src={svgUrl}
@@ -219,7 +222,7 @@ export function QrCodeShowQrInner({
         </DialogContent>
       </DialogBody>
       <DialogFooter>
-        <FooterActions align={!onClose && !onBack ? 'center' : 'spaceBetween'}>
+        <FooterActions align={!onClose ? 'center' : 'spaceBetween'}>
           <FooterActionButton data-testid='copy-qr-code' onClick={onCopy}>
             <div className='copy-link-icon'></div>
             {tx('menu_copy_link_to_clipboard')}
@@ -227,11 +230,6 @@ export function QrCodeShowQrInner({
           {onClose && (
             <FooterActionButton onClick={onClose} data-testid='close'>
               {tx('close')}
-            </FooterActionButton>
-          )}
-          {onBack && (
-            <FooterActionButton onClick={onBack} data-testid='back'>
-              {tx('back')}
             </FooterActionButton>
           )}
         </FooterActions>

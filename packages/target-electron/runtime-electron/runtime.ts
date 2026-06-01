@@ -138,12 +138,13 @@ class ElectronRuntime implements Runtime {
   onShowDialog:
     | ((kind: 'about' | 'keybindings' | 'settings') => void)
     | undefined
-  onDragFileOut(file: string): void {
-    ipcBackend.send('ondragstart', file)
+  onDragFileOut(file: string, realName: string | null): void {
+    ipcBackend.send('ondragstart', file, realName)
   }
   isDroppedFileFromOutside(file: string): boolean {
     // ".sqlite-blobs" is the old folder name that could still be there in old accounts
-    const forbiddenPathRegEx = /DeltaChat\/.+?(\.sqlite-blobs|\.db-blobs)\//gi
+    const forbiddenPathRegEx =
+      /DeltaChat\/.+?(\.sqlite-blobs|\.db-blobs)\/|[/\\]drag-\d+[/\\]/gi
     return !forbiddenPathRegEx.test(file.replaceAll('\\', '/'))
   }
   onThemeUpdate: (() => void) | undefined
@@ -166,7 +167,7 @@ class ElectronRuntime implements Runtime {
     isContactRequest: boolean,
     subject: string,
     sender: string,
-    receiveTime: string,
+    sentTime: string,
     content: string
   ): void {
     ipcBackend.invoke(
@@ -176,7 +177,7 @@ class ElectronRuntime implements Runtime {
       isContactRequest,
       subject,
       sender,
-      receiveTime,
+      sentTime,
       content
     )
   }
@@ -201,8 +202,21 @@ class ElectronRuntime implements Runtime {
   ): void {
     ipcBackend.invoke('webxdc:instance-deleted', accountId, instanceId)
   }
-  startOutgoingVideoCall(accountId: number, chatId: number): Promise<void> {
-    return ipcBackend.invoke('startOutgoingVideoCall', accountId, chatId)
+  startOutgoingVideoCall(
+    accountId: number,
+    chatId: number,
+    param: { startWithCameraEnabled: boolean }
+  ): Promise<void> {
+    return ipcBackend.invoke('startOutgoingVideoCall', accountId, chatId, param)
+  }
+  openIncomingVideoCallWindow(params: {
+    accountId: number
+    chatId: number
+    callMessageId: number
+    callerWebrtcOffer: string
+    startWithCameraEnabled: boolean
+  }): Promise<void> {
+    return ipcBackend.invoke('openIncomingVideoCallWindow', params)
   }
   openMapsWebxdc(accountId: number, chatId?: number | undefined): void {
     ipcBackend.invoke('open-maps-webxdc', accountId, chatId)
@@ -246,6 +260,10 @@ class ElectronRuntime implements Runtime {
   }
   removeTempFile(path: string): Promise<void> {
     return ipcBackend.invoke('app.removeTempFile', path)
+  }
+
+  deleteSticker(stickerPath: string): Promise<void> {
+    return ipcBackend.invoke('app.deleteSticker', stickerPath)
   }
 
   private notificationCallback: (data: {
@@ -543,11 +561,7 @@ class ElectronRuntime implements Runtime {
     return ipcBackend.sendSync('get-config-path')
   }
   getAutostartState(): Promise<AutostartState> {
-    // TODO - see https://github.com/deltachat/deltachat-desktop/issues/2518
-    return Promise.resolve({
-      isSupported: false,
-      isRegistered: false,
-    })
+    return ipcBackend.invoke('get-autostart-state')
   }
   checkMediaAccess(mediaType: MediaType): Promise<MediaAccessStatus> {
     return ipcBackend.invoke('checkMediaAccess', mediaType)

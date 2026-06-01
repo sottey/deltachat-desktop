@@ -21,31 +21,36 @@ export default function KeybindingCheatSheet(props: DialogProps) {
   }, [])
 
   return (
-    <Dialog onClose={onClose} className='keyboard-hint-cheatsheet-dialog'>
+    <Dialog onClose={onClose} className='keyboard-shortcuts-dialog' width={400}>
       <DialogHeader onClose={onClose}>
         <DialogHeading>{tx('keybindings')}</DialogHeading>
       </DialogHeader>
-      <DialogBody className='dialog-body'>
-        <div className='keyboard-hint-dialog-body'>
+      <DialogBody className='shortcuts-dialog-body'>
+        <div className='shortcuts-grid'>
           {settingsStore &&
-            getKeybindings(settingsStore.desktopSettings).map(entry => {
-              if (entry.type === 'header') {
-                return (
-                  <div key={entry.title}>
-                    <h2>{entry.title}</h2>
-                  </div>
-                )
-              } else {
-                const { action } = entry
-                return (
-                  <ShortcutGroup
-                    title={action.title}
-                    keyBindings={action.keyBindings}
-                    key={action.title}
-                  />
-                )
+            getKeybindings(settingsStore.desktopSettings).map(
+              (entry, index) => {
+                if (entry.type === 'header') {
+                  return (
+                    <div
+                      key={`header-${index}-${entry.title}`}
+                      className='shortcuts-section-title'
+                    >
+                      <h4>{entry.title}</h4>
+                    </div>
+                  )
+                } else {
+                  const { action } = entry
+                  return (
+                    <ShortcutGroup
+                      title={action.title}
+                      keyBindings={action.keyBindings}
+                      key={`shortcut-${index}-${action.title}`}
+                    />
+                  )
+                }
               }
-            })}
+            )}
         </div>
       </DialogBody>
     </Dialog>

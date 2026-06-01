@@ -6,10 +6,6 @@ $paddingVertical: 20px;
 
 .dialog {
   padding: 0;
-  @media (width < variables.$default-dialog-width) {
-    max-width: calc(100vw - 1rem) !important;
-    min-width: 0 !important;
-  }
 
   &.unstyled {
     background: none;
@@ -33,11 +29,16 @@ $paddingVertical: 20px;
     // display: flex;
     flex-direction: column;
     max-height: calc(100% - 50px);
-    max-width: 733px;
-    min-width: 350px;
+    max-width: min(733px, calc(100vw - 1rem));
+    min-width: min(350px, calc(100vw - 1rem));
     width: unset;
 
     justify-content: center;
+    padding: 0;
+    &:not(.noTopPadding) {
+      /* we always add 20px top padding if not explicitly disabled */
+      padding-top: $paddingVertical;
+    }
   }
   &::backdrop {
     background-color: var(--dialogBackdropBackground);
@@ -50,10 +51,9 @@ $paddingVertical: 20px;
   background-color: var(--bp4DialogHeaderBg);
   border-bottom: var(--outlineProperties);
   display: flex;
-  padding-bottom: 20px;
+  padding-bottom: $paddingVertical;
   padding-inline-start: $paddingHorizontal;
   padding-inline-end: $paddingHorizontal - 5px;
-  padding-top: $paddingVertical;
   user-select: none;
 }
 
@@ -85,12 +85,11 @@ $paddingVertical: 20px;
   padding-inline-end: $paddingHorizontal;
   line-height: 22px;
 
-  &.paddingTop {
-    padding-top: $paddingVertical;
-  }
-
-  &.paddingBottom {
-    padding-bottom: $paddingVertical;
+  /* override additional top margins of the first element
+     in dialog content, the whole dialog already has 20px
+   */
+  &:not(.allowTopPadding) > :first-child {
+    margin-top: 0 !important;
   }
 }
 
@@ -100,7 +99,6 @@ $paddingVertical: 20px;
   padding-bottom: $paddingVertical;
   padding-inline-start: $paddingHorizontal;
   padding-inline-end: $paddingHorizontal;
-  padding-top: $paddingVertical;
 }
 
 .headerButton {
@@ -145,9 +143,8 @@ $paddingVertical: 20px;
 
 .footerActions {
   display: flex;
-  @media (width <= variables.$default-dialog-width) {
-    flex-direction: column;
-  }
+  flex-wrap: wrap;
+  gap: 10px;
 
   &.spaceBetween {
     justify-content: space-between;
@@ -169,14 +166,6 @@ $paddingVertical: 20px;
 .footerActionButton {
   // `.appDownloadingStatus` copy-pated these styles.
   min-width: 100px;
-  padding: 8px 12px !important;
-  margin: 10px 0;
-  & + & {
-    margin-inline-start: 20px;
-  }
-  @media (width <= variables.$default-dialog-width) {
-    & + & {
-      margin-inline-start: 10px;
-    }
-  }
+  flex: 0 1 auto;
+  margin: 0;
 }

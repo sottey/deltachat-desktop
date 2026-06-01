@@ -50,6 +50,7 @@
     min-width: 200px;
     &.sticker {
       min-width: auto;
+      object-fit: contain;
     }
 
     // The padding on the bottom of the bubble produces 4 extra pixels of space at the
@@ -67,31 +68,12 @@
     }
   }
 
-  & > .video-play-btn {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-
-    width: 48px;
-    height: 48px;
-    background-color: var(--videoPlayBtnBg);
-    border-radius: 24px;
-
-    & > .video-play-btn-icon {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-
-      height: 36px;
-      width: 36px;
-      @include mixins.color-svg('./images/play.svg', var(--videoPlayBtnIcon));
-    }
-  }
-
-  &.content-below {
+  &.content-below,
+  /* needed to avoid metadata video controls overlap */
+  &.video {
     margin-bottom: 7px;
+  }
+  &.content-below {
     border-bottom-left-radius: 0px;
     border-bottom-right-radius: 0px;
   }

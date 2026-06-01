@@ -6,17 +6,19 @@ import electron, {
   MenuItemConstructorOptions,
   nativeTheme,
   session,
-  shell,
   WebContents,
   WebContentsView,
 } from 'electron'
-import { clipboard } from 'electron/common'
+import { openExternalHttpOrPromptToCopy } from '../deltachat/link-clicks.js'
 import { join } from 'path'
 import { platform } from 'os'
 
 import { appIcon, htmlDistDir } from '../application-constants.js'
 import { DesktopSettings } from '../desktop_settings.js'
-import { isInviteLink, truncateText } from '@deltachat-desktop/shared/util.js'
+import {
+  shouldHandleLinkInMainApp,
+  truncateText,
+} from '@deltachat-desktop/shared/util.js'
 import { tx } from '../load-translations.js'
 import { open_url } from '../open_url.js'
 import { loadTheme } from '../themes.js'
@@ -43,7 +45,7 @@ const open_windows: { [window_id: string]: BrowserWindow } = {}
  * @param isContactRequest
  * @param subject
  * @param from
- * @param receiveTime
+ * @param sentTime
  * @param htmlEmail
  */
 export function openHtmlEmailWindow(
@@ -52,7 +54,7 @@ export function openHtmlEmailWindow(
   isContactRequest: boolean,
   subject: string,
   from: string,
-  receiveTime: string,
+  sentTime: string,
   htmlEmail: string
 ) {
   const window_id = `${account_id}.${message_id}`
@@ -105,15 +107,13 @@ export function openHtmlEmailWindow(
     300
   )
 
-  const loadRemoteContentAtStart =
+  let loadRemoteContent =
     DesktopSettings.state.HTMLEmailAlwaysLoadRemoteContent && !isContactRequest
 
   window.webContents.ipc.handle('html_email:get_info', _ => ({
     subject,
     from,
-    receiveTime,
-    networkButtonLabelText: tx('load_remote_content'),
-    toggle_network: loadRemoteContentAtStart,
+    sentTime,
   }))
 
   nativeTheme.on('updated', () => {
@@ -234,7 +234,7 @@ export function openHtmlEmailWindow(
    */
   let sandboxedView: WebContentsView = makeBrowserView(
     account_id,
-    loadRemoteContentAtStart,
+    loadRemoteContent,
     htmlEmail,
     window
   )
@@ -249,6 +249,15 @@ export function openHtmlEmailWindow(
       [key: string]: () => MenuItemConstructorOptions
     } = {
       separator: () => ({ type: 'separator' }),
+      load_remote_images: () => ({
+        id: 'load_remote_images',
+        type: 'checkbox',
+        label: tx('load_remote_content'),
+        checked: loadRemoteContent,
+        click() {
+          update_restrictions(!loadRemoteContent)
+        },
+      }),
       always_show: () => ({
         id: 'always_show',
         type: 'checkbox',
@@ -261,12 +270,7 @@ export function openHtmlEmailWindow(
             HTMLEmailAlwaysLoadRemoteContent: newValue,
           })
           // apply change
-          update_restrictions(null, newValue, true)
-          window.webContents.executeJavaScript(
-            `document.getElementById('toggle_network').checked = window.network_enabled= ${Boolean(
-              newValue
-            )}`
-          )
+          update_restrictions(newValue, true)
         },
       }),
       dont_ask: () => ({
@@ -284,9 +288,13 @@ export function openHtmlEmailWindow(
     }
     let menu: Electron.Menu
     if (isContactRequest) {
-      menu = electron.Menu.buildFromTemplate([menuItems.dont_ask()])
+      menu = electron.Menu.buildFromTemplate([
+        menuItems.load_remote_images(),
+        menuItems.dont_ask(),
+      ])
     } else {
       menu = electron.Menu.buildFromTemplate([
+        menuItems.load_remote_images(),
         menuItems.always_show(),
         menuItems.dont_ask(),
       ])
@@ -324,7 +332,6 @@ export function openHtmlEmailWindow(
   })
 
   const update_restrictions = async (
-    _ev: any,
     allow_network: boolean,
     skip_sideeffects = false
   ) => {
@@ -377,13 +384,14 @@ export function openHtmlEmailWindow(
       buttons[result.response].action()
     }
 
+    loadRemoteContent = allow_network
     const bounds = sandboxedView?.getBounds()
     window.contentView.removeChildView(sandboxedView)
     context_menu_handle()
     sandboxedView.webContents.close()
     sandboxedView = makeBrowserView(
       account_id,
-      allow_network,
+      loadRemoteContent,
       htmlEmail,
       window
     )
@@ -394,8 +402,6 @@ export function openHtmlEmailWindow(
     // for debugging email
     // sandboxedView.webContents.openDevTools({ mode: 'detach' })
   }
-  // handle toggle network button
-  window.webContents.ipc.handle('html-view:change-network', update_restrictions)
 
   window.loadFile(
     join(
@@ -409,6 +415,7 @@ export function openHtmlEmailWindow(
 }
 
 const CSP_DENY = `default-src 'none';
+sandbox;
 font-src 'self' data:;
 frame-src 'none';
 img-src 'self' data:;
@@ -418,6 +425,7 @@ form-action 'none';
 script-src 'none';`.replace(/\n/g, '')
 const CSP_ALLOW = `
 default-src 'none';
+sandbox;
 font-src 'self' data: http: https:;
 frame-src 'none';
 img-src 'self' blob: data: https: http:;
@@ -507,27 +515,11 @@ function makeBrowserView(
     }`)
 
   const openLink = (url: string) => {
-    if (url.startsWith('mailto:') || isInviteLink(url)) {
+    if (shouldHandleLinkInMainApp(url)) {
       open_url(url)
       mainWindow.window?.show()
     } else {
-      if (
-        url.toLowerCase().startsWith('http:') ||
-        url.toLowerCase().startsWith('https:')
-      ) {
-        shell.openExternal(url)
-      } else {
-        dialog
-          .showMessageBox(window, {
-            buttons: [tx('no'), tx('menu_copy_link_to_clipboard')],
-            message: tx('ask_copy_unopenable_link_to_clipboard', url),
-          })
-          .then(({ response }) => {
-            if (response == 1) {
-              clipboard.writeText(url)
-            }
-          })
-      }
+      openExternalHttpOrPromptToCopy(window, url)
     }
   }
 

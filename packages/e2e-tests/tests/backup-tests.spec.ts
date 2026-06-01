@@ -1,8 +1,8 @@
 import { expect, type Page } from '@playwright/test'
+import path from 'path'
 
 import {
   clickThroughTestIds,
-  createProfiles,
   deleteAllProfiles,
   getUser,
   loadExistingProfiles,
@@ -17,30 +17,15 @@ test.describe.configure({
 })
 
 let existingProfiles: User[] = []
-const numberOfProfiles = 1
 let page: Page
 
-test.beforeAll(async ({ browser, isChatmail }) => {
-  const contextForProfileCreation = await browser.newContext()
-  const pageForProfileCreation = await contextForProfileCreation.newPage()
+const fixturesPath = path.join(import.meta.dirname, '..', 'fixtures')
 
-  await reloadPage(pageForProfileCreation)
-
-  existingProfiles =
-    (await loadExistingProfiles(pageForProfileCreation)) ?? existingProfiles
-
-  await createProfiles(
-    numberOfProfiles,
-    existingProfiles,
-    pageForProfileCreation,
-    browser.browserType().name(),
-    isChatmail
-  )
-
-  await contextForProfileCreation.close()
-
+test.beforeAll(async ({ browser }) => {
   page = await browser.newPage()
   await reloadPage(page)
+
+  existingProfiles = (await loadExistingProfiles(page)) ?? existingProfiles
 })
 
 test.afterEach(async () => {
@@ -58,6 +43,26 @@ test.afterAll(async ({ browser }) => {
   await reloadPage(pageForProfileDeletion)
   await deleteAllProfiles(pageForProfileDeletion, existingProfiles)
   await context.close()
+})
+
+test('import backup from file', async () => {
+  const profileButtons = page
+    .getByRole('navigation', { name: /Profiles?/ })
+    .getByRole('tab')
+
+  await page.getByRole('button', { name: 'I Already Have a Profile' }).click()
+  await expect(profileButtons.last()).toContainText('?')
+
+  const fileChooserPromise = page.waitForEvent('filechooser')
+  await page.getByRole('button', { name: 'Restore from Backup' }).click()
+  const fileChooser = await fileChooserPromise
+  await fileChooser.setFiles(
+    path.join(fixturesPath, 'dummy-account-backup.tar')
+  )
+
+  await expect(profileButtons.last()).toContainText('Alice'[0])
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'New Chat' })).toBeVisible()
 })
 
 test('shows warning when scanning backups that are newer than supported', async ({
@@ -86,7 +91,12 @@ test('shows warning when scanning backups that are newer than supported', async 
 
   await sendBackupDialog.getByRole('button', { name: 'Continue' }).click()
 
-  await sendBackupDialog.getByRole('button', { name: 'Copy' }).click()
+  // The "Copy" button will not appear in the context menu
+  // if we don't wait for the QR to appear.
+  await expect(sendBackupDialog.locator('img')).toBeVisible()
+
+  await sendBackupDialog.getByTestId('dialog-header-context-menu').click()
+  await page.getByRole('menuitem', { name: 'Copy' }).click()
   await page.getByTestId('alert-ok').click()
 
   const clipboardContent = await page.evaluate(async () => {
@@ -103,7 +113,7 @@ test('shows warning when scanning backups that are newer than supported', async 
     await navigator.clipboard.writeText(text)
   }, mutatedContent)
 
-  await sendBackupDialog.getByRole('button', { name: 'Cancel' }).click()
+  await sendBackupDialog.getByRole('button', { name: 'Close' }).click()
   // Confirm cancellation
   await page.getByTestId('confirm-dialog').getByTestId('confirm').click()
 

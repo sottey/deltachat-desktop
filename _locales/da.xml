@@ -12,7 +12,6 @@
     <string name="off">Fra</string>
     <string name="def">Standard</string>
     <string name="default_value">Standardindstilling (%1$s)</string>
-    <string name="default_value_as_above">Standardindstilling ()</string>
     <string name="custom">Tilpasset</string>
     <string name="none">Ingen</string>
     <string name="automatic">Automatisk</string>
@@ -35,6 +34,7 @@
     <string name="archive">Arkivér</string>
     <!-- Verb "to unarchive", as in "remove a chat from the archive", opposite of the previous string -->
     <string name="unarchive">Fortryd arkivering</string>
+    <!-- Verb "to mute". used to mute a chat, so that it is silenced e.g. does not make noise or cause notifications -->
     <string name="mute">Udsæt</string>
     <string name="ephemeral_messages">Beskeder med tidsudløb</string>
     <string name="ephemeral_messages_hint">Disse indstillinger gælder for alle deltagere der bruger Delta Chat. De kan dog kopiere, gemme og videresende beskeder eller bruge andre e-mail klienter. </string>
@@ -50,10 +50,6 @@
     <string name="load_remote_content">Hent billeder</string>
     <string name="always">Altid</string>
     <string name="once">En gang</string>
-    <!-- deprecated, UI must not offer an option to show the password -->
-    <string name="show_password">Vis adgangskode</string>
-    <!-- deprecated, UI must not offer an option to show the password -->
-    <string name="hide_password">Vis ikke adgangskode</string>
     <string name="not_now">Ikke nu</string>
     <string name="never">Aldrig</string>
     <string name="one_moment">Et øjeblik…</string>
@@ -118,6 +114,7 @@
     <!-- "Stickers" as known from other messengers; in some languages, the English "Sticker" is fine. -->
     <string name="sticker">Klistermærker</string>
     <string name="images">Billeder</string>
+    <!-- a noun, used for "Music" and other "Audio" files -->
     <string name="audio">Lyd</string>
     <string name="voice_message">Tale besked</string>
     <string name="forwarded">Videresendt</string>
@@ -128,6 +125,7 @@
     <string name="documents">Dokumenter</string>
     <string name="contact">Kontakt</string>
     <string name="camera">Kamera</string>
+    <!-- Switch eg. from front to back camera -->
     <string name="switch_camera">Skift kamera</string>
     <string name="location">Placering</string>
     <string name="gallery">Galleri</string>
@@ -208,7 +206,6 @@
     <string name="menu_zoom_in">Forstør</string>
     <string name="menu_zoom_out">Formindsk</string>
     <string name="menu_save_log">Gem log</string>
-    <string name="copy_json">Kopier JSON</string>
     <string name="title_share_location">Del placering med alle gruppemedlemmer</string>
     <string name="device_talk">Enhedsbeskeder</string>
     <string name="device_talk_subtitle">Lokalt genererede beskeder</string>
@@ -230,14 +227,15 @@
     <string name="mute_for_seven_days">Dæmp i 7 dage</string>
     <string name="mute_forever">Stille for altid</string>
 
+    <!-- deprecated -->
     <string name="share_location_for_5_minutes">i 5 minutter</string>
+
     <string name="share_location_for_30_minutes">i 30 minutter</string>
     <string name="share_location_for_one_hour">i 1 time</string>
     <string name="share_location_for_two_hours">i 2 timer</string>
     <string name="share_location_for_six_hours">i 6 timer</string>
-
     <plurals name="ask_send_following_n_files_to">
-        <item quantity="one">Send den følgende fil til 2%s?</item>
+        <item quantity="one">Send den følgende fil til %s?</item>
         <item quantity="other">Send de følgende %d filer til %s?</item>
     </plurals>
     <string name="file_saved_to">Fil gemt til \"%1$s\".</string>
@@ -246,11 +244,7 @@
         <item quantity="one">Slet %d besked?</item>
         <item quantity="other">Slet %d beskeder?</item>
     </plurals>
-    <!-- deprecated, use ask_delete_messages -->
-    <plurals name="ask_delete_messages_simple">
-        <item quantity="one">Slet %d besked?</item>
-        <item quantity="other">Slet %d beskeder?</item>
-    </plurals>
+    <!-- deprecated, use ask_forward_messages -->
     <string name="ask_forward">Videresend beskeder til %1$s?</string>
     <string name="ask_forward_multiple">Videresend beskeder til %1$d samtaler?  </string>
     <string name="ask_export_attachment">Eksportér vedhæftninger? Eksport af vedhæftninger vil tillade alle programmer på din enhed adgang til dem.\n\nFortsæt?</string>
@@ -263,11 +257,9 @@
     <string name="ask_remove_members">Fjern %1$s fra gruppe?</string>
     <string name="open_url_confirmation">Vil du åbne dette link?</string>
 
-
     <!-- contact list -->
     <string name="contacts_title">Kontakter</string>
     <string name="contacts_type_email_above">Indtast e-mailadresse ovenover</string>
-
 
     <!-- chatlist and chat view -->
     <plurals name="chat_archived">
@@ -305,22 +297,17 @@
     <string name="retry_send">Forsøg igen at sende besked</string>
     <string name="cannot_display_unsuported_file_type">Kan ikke vise denne filtype: 1%s</string>
     <string name="attachment_failed_to_load">Visning af vedhæftede fil mislykkedes</string>
-    <!-- map -->
-    <string name="filter_map_on_time">Vis placeringer i tidsramme</string>
-    <string name="show_location_traces">Vis spor</string>
-    <string name="add_poi">Send interessepunkt</string>
-
-
     <!-- search -->
     <string name="search">Søg</string>
     <string name="search_explain">Søg efter samtaler, kontakter og beskeder</string>
-    <string name="search_no_result_for_x">Ingen resultater fundet for  \"%s\"</string>
+    <string name="search_no_result_for_x">Ingen resultater fundet for \"%s\"</string>
     <!-- create/edit groups, contact/group profile -->
     <string name="group_name">Gruppenavn</string>
     <string name="group_avatar">Gruppeikon</string>
     <string name="remove_group_image">Fjern gruppeikon</string>
     <string name="change_group_image">Ændre gruppeikon</string>
     <string name="group_create_button">Oprette gruppe</string>
+    <!-- deprecated, use please_enter_chat_name -->
     <string name="group_please_enter_group_name">Indtast et navn til gruppen.</string>
     <string name="group_add_members">Tilføj medlemmer</string>
     <string name="group_self_not_in_group">Man skal være medlem af gruppen for at udføre denne handling.</string>
@@ -356,7 +343,6 @@
     <!-- Used for describing resource usage, resulting string will be eg. "1.2 GiB of 3 GiB used" -->
     <string name="part_of_total_used">%1$s af %2$s brugt</string>
 
-
     <string name="login_title">Login</string>
     <string name="login_inbox">Indbakke</string>
     <string name="login_imap_login">IMAP logind navn</string>
@@ -378,7 +364,7 @@
     <string name="import_backup_ask">Sikkerhedskopi fundet hos \"%1$s\".\n\nVil du Importere og bruge al data og opsætning fra den?</string>
     <string name="import_backup_no_backup_found">Ingen sikkerhedskopi fundet.\n\nKopier sikkerhedskopi til \"%1$s\" og prøv igen.</string>
     <!-- %1$s will be replaced by the failing address -->
-    <string name="login_error_cannot_login">Kan ikke logge ind som  \"%1$s\". Kontroller om e-mailadresse og adgangskode er korrekt.</string>
+    <string name="login_error_cannot_login">Kan ikke logge ind som \"%1$s\". Kontroller om e-mailadresse og adgangskode er korrekt.</string>
     <!-- TLS certificate checks -->
     <string name="accept_invalid_certificates">Acceptér ugyldige certifikater</string>
     <string name="switch_account">Skift konto</string>
@@ -398,10 +384,7 @@
     <string name="share_text_multiple_chats">Send denne tekst til %1$d samtaler?\n\n\"%2$s\"</string>
     <string name="share_abort">Deling afbrudt på grund af manglende tilladelser.</string>
 
-
     <!-- preferences -->
-    <string name="pref_using_custom">Bruger tilpasset: %s</string>
-    <string name="pref_using_default">Bruger standard: %s</string>
     <string name="pref_profile_info_headline">Profil information</string>
     <string name="pref_profile_photo">Profilbillede</string>
     <string name="pref_blocked_contacts">Blokerede kontakter</string>
@@ -410,6 +393,7 @@
     <string name="pref_your_name">Dit navn</string>
     <!-- Label of the Bio/Signature/Status/Motto field -->
     <string name="pref_default_status_label">Underskrift tekst</string>
+    <!-- Option name for changing behaviour of the "Enter key" to sending out a message directly (instead of adding new line). If in doubt, please refer to a similar option in other messengers. -->
     <string name="pref_enter_sends">Enter tast sender</string>
     <string name="pref_enter_sends_explain">Tryk på enter tast vil sende tekst beskeden</string>
     <string name="pref_outgoing_media_quality">Udgående medie kvalitet</string>
@@ -425,13 +409,12 @@
     <string name="pref_notifications_priority">Prioritet</string>
     <string name="pref_notifications_explain">Aktivér systemnotifikationer for nye beskeder</string>
     <string name="pref_show_notification_content">Vis beskedindhold i notifikationer</string>
+    <!-- deprecated -->
     <string name="pref_show_notification_content_explain">Viser afsender og første ord af beskeden i notifikationer</string>
     <string name="pref_led_color">LED farve</string>
     <string name="pref_sound">Lyd</string>
     <string name="pref_silent">Stille</string>
     <string name="pref_privacy">Privatliv</string>
-    <!-- deprecated, use pref_chats -->
-    <string name="pref_chats_and_media">Samtaler og medie</string>
     <string name="pref_system_default">Systemstandard</string>
     <!-- Translators: as in "opposite of dark" -->
     <string name="pref_light_theme">Lys</string>
@@ -461,11 +444,17 @@
     <string name="pref_background">Baggrund</string>
     <string name="pref_background_btn_default">Brug standardbillede</string>
     <string name="pref_background_btn_gallery">Vælg fra galleri</string>
+    <!-- deprecated -->
     <string name="pref_imap_folder_warn_disable_defaults">Ved deaktivering af denne indstiiling vær sikker på at server og andre klienter er indstillet tilsvarende.\n\nEllers fungerer det måske slet ikke.</string>
+    <!-- deprecated -->
     <string name="pref_auto_folder_moves">Flytter automatisk til DeltaChat mappe</string>
+    <!-- deprecated -->
     <string name="pref_show_emails">Vis klassisk e-mail</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_no">Nej, kun samtaler</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_accepted_contacts">For godkendte kontakter</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_all">Alle</string>
     <string name="pref_experimental_features">Eksperimentelle features</string>
     <string name="pref_on_demand_location_streaming">On-demand lokationsstreaming</string>
@@ -493,12 +482,13 @@
     <!-- automatically delete message -->
     <string name="delete_old_messages">Slet gamle beskeder</string>
     <string name="autodel_device_title">Slet beskeder fra enhed</string>
+    <!-- deprecated -->
     <string name="autodel_server_title">Slet beskeder fra server</string>
     <!-- %1$d will be replaced by the number of messages, you can assume plural/lots here. %2$s will be replaced by a timespan option. -->
     <string name="autodel_device_ask">Vil du slette %1$d beskeder nu og alle nyligt hentede beskeder \"%2$s\" i fremtiden?\n\n• Dette inkluderer alle medier\n\n• Beskeder vil blive slettet uanset om de er set eller ej\n\n• \"Gemte beskeder\" vil ikke blive slettet lokalt</string>
-    <!-- %1$d will be replaced by the number of messages, you can assume plural/lots here. %2$s will be replaced by a timespan option. -->
+    <!-- deprecated -->
     <string name="autodel_server_ask">Vil du slette %1$d beskeder nu og alle nyligt hentede beskeder \"%2$s\" fremover?\n\n⚠️ Dette inkluderer e-mails, medier og \"Gemte beskeder\" i alle mapper på serveren\n\n⚠️ Brug ikke denne funktion hvis du vil beholde data på serveren\n\n⚠️ Brug ikke denne funktion hvis du benytter andre e-mail klienter end Delta Chat</string>
-    <!-- shown below enabled autodel_server-option, should be a summary of autodel_server_ask and remind about the impact -->
+    <!-- deprecated -->
     <string name="autodel_server_enabled_hint">Dette inkluderer email, medier og \"Gemte beskeder\" i alle server mapper. Brug ikke denne funktion hvis du vil beholde data på serveren eller hvis du bruger andre emailklienter end Delta Chat.</string>
     <string name="autodel_confirm">Jeg forstår, slet alle disse beskeder</string>
     <!-- "At once" in the meaning of "Immediately", without any intervening time. -->
@@ -540,10 +530,6 @@
     <string name="ephemeral_timer_seconds_by_you">Tidsudløb for beskeder sat til %1$s s af mig.</string>
     <!-- %1$s will be replaced by the number of seconds (always >1) the timer is set to, %2$s will be replaced by name of the contact -->
     <string name="ephemeral_timer_seconds_by_other">Tidsudløb for beskeder sat til %1$s s af %2$s.</string>
-    <!-- deprecated, usage needs to be removed in core -->
-    <string name="ephemeral_timer_1_minute_by_you">Tidsudløb for beskeder sat til 1 minut af mig.</string>
-    <!-- deprecated, usage needs to be removed in core -->
-    <string name="ephemeral_timer_1_minute_by_other">Tidsudløb for beskeder sat til 1 minut af %1$s.</string>
     <string name="ephemeral_timer_1_hour_by_you">Tidsudløb for beskeder sat til 1 time af mig.</string>
     <!-- %1$s will be replaced by name of the contact -->
     <string name="ephemeral_timer_1_hour_by_other">Tidsudløb for beskeder sat til 1 time af %1$s.</string>
@@ -595,11 +581,9 @@
     <string name="qrshow_join_contact_hint">Skan dette for at indstille kontakt med %1$s</string>
     <string name="qrshow_join_contact_no_connection_toast">Ingen internet forbindelse, kan ikke udføre QR kode opsætning.</string>
     <string name="qraccount_ask_create_and_login">Opret ny e-mail adresse på \"%1$s\" og log ind der?</string>
-    <!-- deprecated, use confirm_add_transport when scanning such a QR code from the main scanner -->
-    <string name="qraccount_ask_create_and_login_another">Opret ny e-mail adresse på \"%1$s\" og log ind der?\n\nDin eksisterende konto bliver ikke slettet. Brug \"Skift konto\" for at skifte imellem dine konti.</string>
     <string name="qraccount_qr_code_cannot_be_used">Den skannede QR-kode kan ikke bruges til at opsætte en ny konto.</string>
     <string name="contact_verified">%1$s bekræftet.</string>
-    <!-- notifications  -->
+    <!-- notifications -->
     <string name="notify_reply_button">Svar</string>
     <string name="notify_new_message">Ny besked</string>
     <string name="notify_background_connection_enabled">Baggrundsforbindelse aktiveret</string>
@@ -620,9 +604,6 @@
     <string name="ImageEditorHud_draw_anywhere_to_blur">Tegn hvor som helst for at sløre</string>
     <string name="ImageEditorHud_rotate">Roter</string>
 
-    <!-- strings introduced on desktop. we want to share strings between the os, in general, please do not add generic strings here -->
-    <string name="about_offical_app_desktop">Dette er den officielle Delta Chat Desktop app.</string>
-    <string name="about_licensed_under_desktop">Denne software er licenseret under GNU GPL version 3 og kildekoden er tilgængelig på GitHub</string>
     <string name="welcome_desktop">Velkommen til Delta Chat</string>
     <string name="global_menu_preferences_language_desktop">Vælge sprog...</string>
     <string name="global_menu_file_desktop">Fil</string>
@@ -666,7 +647,6 @@
     <string name="a11y_message_context_menu_btn_label">Beskedhandlinger</string>
     <string name="a11y_background_preview_label">Baggrundsvisning</string>
     <string name="a11y_disappearing_messages_activated">Beskeder med tidsudløb aktiveret</string>
-
     <!-- iOS permissions, copy from "deltachat-ios/Info.plist", which is used on missing translations in "deltachat-ios/LANG.lproj/InfoPlist.strings" -->
     <string name="InfoPlist_NSCameraUsageDescription">Delta Chat bruger dit kamera til at sende billeder, videoer og skanne QR-koder</string>
     <string name="InfoPlist_NSMicrophoneUsageDescription">Delta Chat bruger din mikrofon til at optage og sende talebeskeder og videoer med lyd.</string>

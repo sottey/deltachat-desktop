@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 
-import type { SettingsStoreState } from '../../stores/settings'
 import { ExperimentalFeatures } from './ExperimentalFeatures'
-import ImapFolderHandling from './ImapFolderHandling'
 import SettingsHeading from './SettingsHeading'
 import SettingsSeparator from './SettingsSeparator'
 import useTranslationFunction from '../../hooks/useTranslationFunction'
@@ -18,13 +16,15 @@ import { selectedAccountId } from '../../ScreenController'
 import TransportsDialog from '../dialogs/Transports'
 import { LogDialog } from '../dialogs/Log'
 import { DialogProps } from '../../contexts/DialogContext'
+import { getLogger } from '../../../../shared/logger'
 
 type Props = {
-  settingsStore: SettingsStoreState
   onClose: DialogProps['onClose']
 }
 
-export default function Advanced({ onClose, settingsStore }: Props) {
+const log = getLogger('renderer/settings/advanced')
+
+export default function Advanced({ onClose }: Props) {
   const tx = useTranslationFunction()
   const { openDialog } = useDialog()
   const openProxySettings = () => {
@@ -96,21 +96,10 @@ export default function Advanced({ onClose, settingsStore }: Props) {
       <SettingsHeading>{tx('pref_experimental_features')}</SettingsHeading>
       <ExperimentalFeatures />
 
-      {/*
-        don't show it on electron yet, as the message "not available on this runtime/platform"
-        would confuse users as long as tauri is not the default */}
-      {runtime.getRuntimeInfo().target === 'tauri' && (
+      {runtime.getRuntimeInfo().target !== 'browser' && (
         <>
           <SettingsSeparator />
           <SettingsAutoStart />
-        </>
-      )}
-
-      {settingsStore.settings.is_chatmail === '0' && (
-        <>
-          <SettingsSeparator />
-          <SettingsHeading>Legacy Options</SettingsHeading>
-          <ImapFolderHandling settingsStore={settingsStore} />
         </>
       )}
     </>
@@ -124,7 +113,13 @@ function SettingsAutoStart() {
     null
   )
   const update = useCallback(() => {
-    runtime.getAutostartState().then(setAutostartState)
+    runtime
+      .getAutostartState()
+      .then(setAutostartState)
+      .catch(error => {
+        log.warn('Failed to load autostart state', error)
+        setAutostartState({ isSupported: false, isRegistered: null })
+      })
   }, [])
 
   useEffect(() => {
@@ -136,7 +131,11 @@ function SettingsAutoStart() {
       <DesktopSettingsSwitch
         // force react to rerender element, so that the switch does not animate
         key={String(!autostartState)}
-        settingsKey='autostart'
+        settingsKey={
+          runtime.getRuntimeInfo().target === 'electron'
+            ? 'autostartElectron'
+            : 'autostart'
+        }
         label={tx('pref_autostart')}
         description={
           autostartState

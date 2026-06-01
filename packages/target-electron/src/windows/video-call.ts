@@ -22,14 +22,39 @@ import { setContentProtection } from '../content-protection'
 
 const log = getLogger('windows/video-call')
 
-export function startOutgoingVideoCall(accountId: number, chatId: number) {
+/**
+ * Tracks open call windows by "accountId-chatId" key.
+ * Used to focus an existing call window when the user clicks a call bubble.
+ */
+const openCallWindows = new Map<string, BrowserWindow>()
+
+function callWindowKey(accountId: number, chatId: number): string {
+  return `${accountId}-${chatId}`
+}
+
+export function startOutgoingVideoCall(
+  accountId: number,
+  chatId: number,
+  param: { startWithCameraEnabled: boolean }
+) {
   log.info('starting outgoing video call', { accountId, chatId })
+
+  // If a call window for this chat is already open (e.g. a call is active),
+  // raise it instead of starting a new call.
+  const existingWin = openCallWindows.get(callWindowKey(accountId, chatId))
+  if (existingWin && !existingWin.isDestroyed()) {
+    if (existingWin.isMinimized()) {
+      existingWin.restore()
+    }
+    existingWin.focus()
+    return
+  }
 
   const { offerPromise, windowClosed, closeWindow } = openVideoCallWindow(
     accountId,
     chatId,
     CallDirection.Outgoing,
-    {}
+    param
   )
 
   const jsonrpcRemote = getDCJsonrpcRemote()
@@ -39,14 +64,15 @@ export function startOutgoingVideoCall(accountId: number, chatId: number) {
     if (offer == null) {
       log.info("calls-webapp didn't return an offer, aborting outgoing call")
       // We expect this code path to be taken
-      // only if the window already got closed, but let's be defeinsive.
+      // only if the window already got closed, but let's be defensive.
       closeWindow()
       return
     }
     const callMessageId = await jsonrpcRemote.rpc.placeOutgoingCall(
       accountId,
       chatId,
-      offer
+      offer,
+      param.startWithCameraEnabled
     )
     const { done, onCallAcceptedOnThisDevice: _ } = handleCallEnd(
       jsonrpcRemote,
@@ -89,29 +115,59 @@ export function startHandlingIncomingVideoCalls(
       chat_id,
       msg_id,
       place_call_info,
-    }: { chat_id: number; msg_id: number; place_call_info: string }
+      has_video,
+    }: {
+      chat_id: number
+      msg_id: number
+      place_call_info: string
+      has_video: boolean
+    }
   ) => {
-    log.info('got IncomingCall event', eventAccountId, msg_id)
+    log.info('got IncomingCall event', { eventAccountId, msg_id, has_video })
 
-    openIncomingVideoCallWindow(
-      eventAccountId,
-      chat_id,
-      msg_id,
-      place_call_info
-    )
+    openIncomingVideoCallWindow({
+      accountId: eventAccountId,
+      chatId: chat_id,
+      callMessageId: msg_id,
+      callerWebrtcOffer: place_call_info,
+      startWithCameraEnabled: has_video,
+    })
   }
 
   jsonrpcRemote.on('IncomingCall', incomingCallListener)
   return () => jsonrpcRemote.off('IncomingCall', incomingCallListener)
 }
 
-function openIncomingVideoCallWindow(
-  accountId: number,
-  chatId: number,
-  callMessageId: number,
+export function openIncomingVideoCallWindow({
+  accountId,
+  chatId,
+  callMessageId,
+  callerWebrtcOffer,
+  startWithCameraEnabled,
+}: {
+  accountId: number
+  chatId: number
+  callMessageId: number
   callerWebrtcOffer: string
-) {
-  log.info('received incoming call', { accountId, chatId, callMessageId })
+  startWithCameraEnabled: boolean
+}) {
+  log.info('openIncomingVideoCallWindow', {
+    accountId,
+    chatId,
+    callMessageId,
+    startWithCameraEnabled,
+  })
+
+  // If a call window for this chat is already open bring it to the
+  // foreground instead of opening a second window.
+  const existingWin = openCallWindows.get(callWindowKey(accountId, chatId))
+  if (existingWin && !existingWin.isDestroyed()) {
+    if (existingWin.isMinimized()) {
+      existingWin.restore()
+    }
+    existingWin.focus()
+    return
+  }
 
   const { answerPromise, windowClosed, closeWindow } = openVideoCallWindow(
     accountId,
@@ -119,6 +175,7 @@ function openIncomingVideoCallWindow(
     CallDirection.Incoming,
     {
       callerWebrtcOffer,
+      startWithCameraEnabled,
     }
   )
 
@@ -159,13 +216,14 @@ function openVideoCallWindow<D extends CallDirection>(
   callDirection: D,
   {
     callerWebrtcOffer,
-  }: D extends CallDirection.Incoming
+    startWithCameraEnabled,
+  }: { startWithCameraEnabled: boolean } & (D extends CallDirection.Incoming
     ? {
         callerWebrtcOffer: string
       }
     : {
         callerWebrtcOffer?: undefined
-      }
+      })
 ): {
   closeWindow: () => void
   windowClosed: Promise<void>
@@ -221,7 +279,8 @@ function openVideoCallWindow<D extends CallDirection>(
     autoHideMenuBar: true,
     // The `calls-webapp` theme is dark. Reduce flashing.
     backgroundColor: '#000',
-    title: tx('start_call'), // To be changed later.
+    // We'll also do `setTitle()` later.
+    title: startWithCameraEnabled ? tx('video_call') : tx('audio_call'),
     icon: appIcon(), // To be changed later.
     // TODO
     // alwaysOnTop: main_window?.isAlwaysOnTop(),
@@ -232,15 +291,26 @@ function openVideoCallWindow<D extends CallDirection>(
   // Maybe we could add a setting for this, i.e. "Allow calls to bypass VPN".
   // win.webContents.setWebRTCIPHandlingPolicy()
 
+  const windowKey = callWindowKey(accountId, chatId)
+  openCallWindows.set(windowKey, win)
+
   const abortController = new AbortController()
-  win.once('closed', () => abortController.abort('window closed'))
+  win.once('closed', () => {
+    openCallWindows.delete(windowKey)
+    abortController.abort('window closed')
+  })
 
   chatInfoPromise.then(chat => {
     if (win.isDestroyed()) {
       return
     }
-    // TODO i18n
-    win.setTitle(`Call with ${chat.name}`)
+    // Separating name with space is not appropriate in all languages,
+    // but we don't have other strings.
+    // Also it's perhaps not suitable to still show "audio call"
+    // when parties have later enabled their cameras, but good enough.
+    win.setTitle(
+      `${startWithCameraEnabled ? tx('video_call') : tx('audio_call')} ${chat.name}`
+    )
     chat.profileImage && win.setIcon(chat.profileImage)
   })
 
@@ -249,15 +319,16 @@ function openVideoCallWindow<D extends CallDirection>(
       {
         label: tx('global_menu_view_desktop'),
         submenu: [
-          { role: 'toggleDevTools' },
-
-          { type: 'separator' },
-          { role: 'resetZoom' },
           { role: 'zoomIn' },
           { role: 'zoomOut' },
+          { role: 'resetZoom' },
           { type: 'separator' },
-
           { role: 'togglefullscreen' },
+          { type: 'separator' },
+          {
+            label: tx('global_menu_view_developer_desktop'),
+            submenu: [{ role: 'toggleDevTools' }],
+          },
         ],
       },
     ])
@@ -338,11 +409,9 @@ function openVideoCallWindow<D extends CallDirection>(
       }
 
       const { response } = await dialog.showMessageBox(win, {
-        // TODO i18n
         // TODO show the account name / label that received the call?
-        message: chatInfo
-          ? `📞 ${chatInfo.name} is calling`
-          : `📞 ${tx('incoming_call')}`,
+        message:
+          `📞 ${tx('call_incoming')}` + (chatInfo ? ' ' + chatInfo.name : ''),
         type: 'question',
         buttons: ['Decline', 'Answer'],
         defaultId: 0,
@@ -384,7 +453,13 @@ function openVideoCallWindow<D extends CallDirection>(
   webAppMessagePort.start()
 
   const host = formatHost(accountId, chatId)
-  const query = callDirection === CallDirection.Incoming ? '?playRingtone' : ''
+  const query = new URLSearchParams()
+  if (!startWithCameraEnabled) {
+    query.set('noOutgoingVideoInitially', '')
+  }
+  if (callDirection === CallDirection.Incoming) {
+    query.set('playRingtone', '')
+  }
   const hash =
     callDirection === CallDirection.Outgoing
       ? '' // We'll `#startCall` after a "grace period" below.
@@ -392,7 +467,7 @@ function openVideoCallWindow<D extends CallDirection>(
         ? `#offerIncomingCall=${btoa(callerWebrtcOffer!)}`
         : // Otherwise we'll set the hash later, when the call gets accepted.
           ''
-  win.webContents.loadURL(`${SCHEME_NAME}://${host}${query}${hash}`, {
+  win.webContents.loadURL(`${SCHEME_NAME}://${host}?${query}${hash}`, {
     extraHeaders: 'Content-Security-Policy: ' + CSP,
   })
 
@@ -590,13 +665,13 @@ function handleCallEnd(
 }
 
 // See https://github.com/deltachat/calls-webapp/pull/20.
-// font-src is needed for Eruda (debug) build and should be removed
-// when the "calls" feature goes to production. See
+// font-src and unsafe-eval are needed for Eruda (debug) build
+// and should be removed when the "calls" feature goes to production. See
 // https://github.com/deltachat/deltachat-desktop/issues/5547.
 const CSP =
   "default-src 'none';\
 style-src 'self' 'unsafe-inline';\
-script-src 'self' 'unsafe-inline';\
+script-src 'self' 'unsafe-inline' 'unsafe-eval';\
 img-src 'self';\
 font-src data:;\
 media-src 'self'"
@@ -743,6 +818,9 @@ function parseHost(host: string): null | {
   chatId: number
 } {
   const [chatIdStr, accountIdStr, dummyHostName, ...rest] = host.split('.')
+  if (chatIdStr == undefined || accountIdStr == undefined) {
+    return null
+  }
   const [chatId, accountId] = [parseInt(chatIdStr), parseInt(accountIdStr)]
   const isValidId = (num: number) => Number.isFinite(num) && num >= 0
   if (!isValidId(accountId) || !isValidId(chatId)) {

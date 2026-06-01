@@ -1,6 +1,7 @@
 .qrReader {
   position: relative;
   height: 375px;
+  margin-bottom: 20px;
 }
 
 .qrReaderVideo {
@@ -10,10 +11,13 @@
   position: absolute;
   right: 0;
   top: 0;
-  transform: scale(-1, 1); // Mirror video by flipping it horizontally
 
   &.visible {
     display: block;
+  }
+
+  &.flipped {
+    transform: scale(-1, 1); // Mirror video by flipping it horizontally
   }
 }
 

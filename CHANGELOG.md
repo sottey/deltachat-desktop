@@ -2,6 +2,159 @@
 
 All notable changes to this project will be documented in this file.
 
+<a id="2_49_1"></a>
+## [2.49.1] - 2026-04-18
+
+### Fixed
+
+- Prevent crash on MacOS when closing notify twice
+
+<a id="2_49_0"></a>
+## [2.49.0] - 2026-04-13
+
+### Added
+
+- Leave & delete group ([#6153](https://github.com/deltachat/deltachat-desktop/issues/6153))
+
+### Fixed
+
+- Remove title from title bar on macOS ([#6188](https://github.com/deltachat/deltachat-desktop/issues/6188))
+- Add bg for quotes in video msg ([#6212](https://github.com/deltachat/deltachat-desktop/issues/6212))
+- Translate static aria label ([#6170](https://github.com/deltachat/deltachat-desktop/issues/6170))
+
+### Miscellaneous Tasks
+
+- Upgrade Electron to 41.2.0
+- Upgrade core to 2.49.0 ([#6232](https://github.com/deltachat/deltachat-desktop/issues/6232))
+  - Mark a message as delivered only after it has been fully sent out (#8062).
+  - Do not create 1:1 chat on second device when scanning a QR code.
+  - Let search also return hidden contacts if search value is an email address.
+  - Make start messages stick to the top of the chat.
+
+
+<a id="2_48_0"></a>
+## [2.48.0] - 2026-03-30
+
+### Added
+
+- Rework message info ([#6156](https://github.com/deltachat/deltachat-desktop/issues/6156))
+
+### Miscellaneous Tasks
+
+- Upgrade core to 2.48.0 ([#6171](https://github.com/deltachat/deltachat-desktop/issues/6171))
+
+<a id="2_47_0"></a>
+## [2.47.0] - 2026-03-24
+
+### Added
+
+- Add autostart functionality (off by default, Settings -> Advanced -> Autostart) ([#6076](https://github.com/deltachat/deltachat-desktop/issues/6076))
+- Add channel/group descriptions ([#6026](https://github.com/deltachat/deltachat-desktop/issues/6026))
+- Mini-apps (WebXDC): you can now click on links
+- Better voice message playback: global player UI
+- Add "Who can call me" setting
+  - Click on a call message to open call window if "who can call me" is disabled for this caller
+- View count in channels (visible only to channel owner)
+- Add "Unpublish a transport" feature (Advanced) ([#6137](https://github.com/deltachat/deltachat-desktop/issues/6137))
+
+### Fixed
+
+- Remove notification when its message gets read or deleted
+- Make "mentions" setting per-account.
+  Unfortunately this means that if you disabled "mentions",
+  they are again enabled on all your accounts.
+  You can change that in Settings -> Notifications.
+- Extraneous padding on full screen image view
+- Don't close "New Group" dialog on outside click, losing progress
+- Better group / channel / profile avatar editor
+  - better image quality
+  - remove maximum zoom limit to allow zooming in on small images
+  - a little better UI
+
+- WebXDC: remove wrapper `<iframe>`:
+  no need for app developers to hack around
+  `visibilitychange` and `beforeunload`.
+- Mobile: fix reactions picker getting closed on keyboard open
+- Scroll to new messages if appropriate
+  (some messages didn't cause a scroll previously)
+- Do not cover video controls with message sent date ([#6096](https://github.com/deltachat/deltachat-desktop/issues/6096))
+- Do not crop stickers ([#6069](https://github.com/deltachat/deltachat-desktop/issues/6069))
+- Make more text selectable, such as in the "Encryption info" dialog
+- Fix text overflow in delete account dialog ([#6070](https://github.com/deltachat/deltachat-desktop/issues/6070))
+- Fix some functionality not working
+  when multiple users use Delta Chat on the same machine,
+  due only one being the temp folder owner ([#6124](https://github.com/deltachat/deltachat-desktop/issues/6124))
+- Fix various UI issues
+- Bigger QR Code for Add second device ([#6085](https://github.com/deltachat/deltachat-desktop/issues/6085))
+
+### Build system
+- Upgrade core from 2.43.0 to [2.47.0](https://github.com/chatmail/core/blob/main/CHANGELOG.md#2470---2026-03-24)
+- Upgrade Electron to 41
+  - fix pointer lock in some mini-app games
+
+
+<a id="2_43_0"></a>
+## [2.43.0] - 2026-02-18
+
+### Added
+
+- Allow forwarding a message to other profiles ([#5916](https://github.com/deltachat/deltachat-desktop/issues/5916))
+- New per-message shortcuts (press `Ctrl + /` to see them) ([#5963](https://github.com/deltachat/deltachat-desktop/issues/5963))
+- Calls: add "ringing" tone for outgoing calls
+- Calls: add audio/video select menu ([#6017](https://github.com/deltachat/deltachat-desktop/issues/6017))
+- Calls: for incoming calls, don't enable video by default if the caller did not
+- Add badge counter to window title ([#5875](https://github.com/deltachat/deltachat-desktop/issues/5875))
+- Add arrow key navigation to "React to message" menu
+- Add "Downloading..." in app picker
+
+
+### Build system
+- Upgrade Core to 2.43.0
+- Upgrade Electron to 40.4.1
+
+
+### Changes
+- Adjust chat list's context menu items
+- New translations ([#5907](https://github.com/deltachat/deltachat-desktop/issues/5907))
+- Tweak dark themes
+- Use "danger" color for some more menu items
+- More danger color contrast, while keeping tone and overall appearance ([#5953](https://github.com/deltachat/deltachat-desktop/issues/5953))
+- Allow Escape key to navigate back to the chat list
+- Focus composer on already active chat click
+- Consistent summaries across platforms
+- Message reactions: move freely-selected emoji to end ([#5910](https://github.com/deltachat/deltachat-desktop/issues/5910))
+- Clearer 'clear chat' confirmation button ([#5954](https://github.com/deltachat/deltachat-desktop/issues/5954))
+
+
+### Fixed
+- All "image" pickers to accept same formats
+- Crash on adding invalid .xdc to draft
+- Recognize more formats as img on drop event
+- Add min/max width to vcard ([#5865](https://github.com/deltachat/deltachat-desktop/issues/5865))
+- More space/height for connectivity dialog, because it can be larger ([#5896](https://github.com/deltachat/deltachat-desktop/issues/5896))
+- Don't change reply when editing message
+- Redesign shortcuts dialog ([#5980](https://github.com/deltachat/deltachat-desktop/issues/5980))
+- WebXDC: peroperly serve files with non-alphanumeric names
+- Break long words in dialogs ([#5940](https://github.com/deltachat/deltachat-desktop/issues/5940))
+- Fix "arrow up" shortcut to edit the last message not working if the last message is not from self ([#5959](https://github.com/deltachat/deltachat-desktop/issues/5959))
+- Muted chats were not marked read when marking account as read ([#5923](https://github.com/deltachat/deltachat-desktop/issues/5923))
+- Improve webxdc data cleanup when chat is deleted. ([#5871](https://github.com/deltachat/deltachat-desktop/issues/5871))
+- Also apply content protection (no screenshots) to call window
+- Don't reorder accounts when dropping an account on itself in the list
+- "React" menu not getting focused on open
+- Handle error in `EncryptionInfo`
+- Proper `EncryptionInfo` for non-single chats
+- Make window menues consistent across different windows ([#5983](https://github.com/deltachat/deltachat-desktop/issues/5983))
+- Consistent keyboard zoom shortcuts ([#5909](https://github.com/deltachat/deltachat-desktop/issues/5909))
+- Fix account size on deletion text contrast ([#5949](https://github.com/deltachat/deltachat-desktop/issues/5949))
+- calls: no remote video if we have no camera
+
+
+### Removed
+- Option to disable realtime-channels ([#5925](https://github.com/deltachat/deltachat-desktop/issues/5925))
+- Remove email from profile
+- Remove UNIX time from msg info dialog ([#5951](https://github.com/deltachat/deltachat-desktop/issues/5951))
+
 <a id="2_35_0"></a>
 ## [2.35.0] - 2025-12-21
 
@@ -3878,7 +4031,12 @@ This section is only relevant to contributors.
 **Historical Note 2** We removed the older changelog, you can look at the git history to get it. (version numbers made hallmark crazy)
 
 
-[unreleased]: https://github.com/deltachat/deltachat-desktop/compare/v2.35.0...HEAD
+[unreleased]: https://github.com/deltachat/deltachat-desktop/compare/v2.49.1...HEAD
+[2.49.1]: https://github.com/deltachat/deltachat-desktop/compare/v2.49.0...v2.49.1
+[2.49.0]: https://github.com/deltachat/deltachat-desktop/compare/v2.48.0...v2.49.0
+[2.48.0]: https://github.com/deltachat/deltachat-desktop/compare/v2.47.0...v2.48.0
+[2.47.0]: https://github.com/deltachat/deltachat-desktop/compare/v2.43.0...v2.47.0
+[2.43.0]: https://github.com/deltachat/deltachat-desktop/compare/v2.35.0...v2.43.0
 [2.35.0]: https://github.com/deltachat/deltachat-desktop/compare/v2.33.0...v2.35.0
 [2.33.0]: https://github.com/deltachat/deltachat-desktop/compare/v2.25.3...v2.33.0
 [2.25.3]: https://github.com/deltachat/deltachat-desktop/compare/v2.25.2...v2.25.3

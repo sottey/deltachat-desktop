@@ -9,6 +9,7 @@ export type IconName =
   | 'audio-muted'
   | 'bell'
   | 'brightness-6'
+  | 'camera'
   | 'chevron-left'
   | 'chevron-right'
   | 'code-tags'
@@ -41,8 +42,10 @@ export type IconName =
   | 'swap_vert'
   | 'swap_hor'
   | 'upload-file'
+  | 'visibility'
 
 type IconColoring =
+  | 'currentColor'
   | 'navbar'
   | 'contextMenu'
   | 'fullscreenControls'
@@ -51,7 +54,7 @@ type IconColoring =
 
 type PropsBase = {
   className?: string
-  onClick?: (ev: Event | React.SyntheticEvent<Element, Event>) => void
+  onClick?: React.MouseEventHandler<HTMLElement>
   icon: IconName
   coloring?: IconColoring
   size?: number
@@ -60,9 +63,10 @@ type JustIconProps = PropsBase & {
   /** Consider using IconButton instead */
   onClick?: undefined
 }
-type IconButtonProps = PropsBase & {
-  'aria-label': string
-}
+type IconButtonProps = PropsBase &
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    'aria-label': string
+  }
 
 export default function Icon({
   coloring,
@@ -86,9 +90,19 @@ export default function Icon({
   )
 }
 
-export function IconButton({ coloring, size, icon, ...rest }: IconButtonProps) {
+export function IconButton({
+  coloring,
+  size,
+  icon,
+  className,
+  ...rest
+}: IconButtonProps) {
   return (
-    <button type='button' {...rest} className={classNames(styles.iconButton)}>
+    <button
+      type='button'
+      {...rest}
+      className={classNames(styles.iconButton, className)}
+    >
       <Icon coloring={coloring} size={size} icon={icon} />
     </button>
   )

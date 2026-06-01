@@ -26,18 +26,24 @@ export interface DesktopSettingsType {
    */
   enableAVCalls?: boolean
   /**
-   * The new version of video calls.
-   * @see https://github.com/orgs/deltachat/projects/81
-   * @see also {@linkcode enableAVCalls}
+   * @deprecated calls are no longer behind an experimental flag; the field
+   * may still be present in persisted user JSON but is not read anymore.
    */
-  enableAVCallsV2: boolean
-  enableBroadcastLists: boolean
+  enableAVCallsV2?: boolean
+  /**
+   * @deprecated channels are no longer behind an experimental flag; the
+   * field may still be present in persisted user JSON but is not read anymore.
+   */
+  enableBroadcastLists?: boolean
   enableOnDemandLocationStreaming: boolean
   enterKeySends: boolean
   locale: string | null
   notifications: boolean
   showNotificationContent: boolean
-  isMentionsEnabled: boolean
+  /**
+   * @deprecated moved to core, per-account `ui.mentions_enabled`.
+   */
+  isMentionsEnabled?: boolean
   /**
    * Controls the volume of the sound accompanying incoming
    * (and possibly outgoing, in the future) messages
@@ -76,13 +82,15 @@ export interface DesktopSettingsType {
    * also called screen_security
    */
   contentProtectionEnabled: boolean
-  /** whether to start with system on supported platforms */
+  /** whether to start Tauri with system on supported platforms */
   autostart: boolean
   /**
    * Width of the chat list pane in pixels.
    * 0 means "use default flex sizing".
    */
   chatListPaneWidth: number
+  /** whether to start Electron with system on supported platforms */
+  autostartElectron: boolean
 }
 
 export interface RC_Config {

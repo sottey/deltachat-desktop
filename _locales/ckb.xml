@@ -11,7 +11,6 @@
     <string name="off">ناچالاک</string>
     <string name="def">بنەڕەتی</string>
     <string name="default_value">بنەڕەتی (%1$s)</string>
-    <string name="default_value_as_above">بنەڕەتی (وەکوو سەرەوە)</string>
     <string name="custom">دڵخواز</string>
     <string name="none">هیچیان</string>
     <string name="automatic">خۆکار</string>
@@ -31,6 +30,7 @@
     <string name="archive">ئەرشیڤ کردن</string>
     <!-- Verb "to unarchive", as in "remove a chat from the archive", opposite of the previous string -->
     <string name="unarchive">دەرهێنان لە ئەرشیڤ</string>
+    <!-- Verb "to mute". used to mute a chat, so that it is silenced e.g. does not make noise or cause notifications -->
     <string name="mute">بێدەنگ کردن</string>
     <string name="ephemeral_messages">ئەو پەیامانەی بزر دەبن</string>
     <string name="ephemeral_messages_hint">ئەم ڕێکخستنانە بۆ هەموو بەکارهێنەرانی دێڵتا چات دەبن. ئەگەرچی ئەوان دەتوانن پەیامەکان کۆپی بکەن، پاشەکەوتیان بکەن و بڵاویان بکەنەوە یان لە پۆستێکی ئەلیکترۆنی دیکە کەڵک بگرن.</string>
@@ -43,10 +43,6 @@
     <string name="show_full_message">هەموو پەیامەکە پیشان بدە...</string>
     <string name="always">هەمیشە</string>
     <string name="once">یەکجار</string>
-    <!-- deprecated, UI must not offer an option to show the password -->
-    <string name="show_password">تێپەڕوشەکە پیشان بدە</string>
-    <!-- deprecated, UI must not offer an option to show the password -->
-    <string name="hide_password">تێپەڕوشەکە بشارەوە</string>
     <string name="not_now">ئێستا نا</string>
     <string name="never">قەت</string>
     <string name="done">ئەنجام بوو</string>
@@ -108,6 +104,7 @@
     <string name="reply_noun">وەڵام دانەوە</string>
     <string name="gif">گیف</string>
     <string name="images">وێنەکان</string>
+    <!-- a noun, used for "Music" and other "Audio" files -->
     <string name="audio">دەنگ</string>
     <string name="voice_message">پەیامی دەنگی</string>
     <string name="forwarded_message">پەیامی هاوبەشکراو</string>
@@ -211,18 +208,20 @@
     <string name="mute_for_seven_days">بێدەنگ کردن بۆ ماوەی 7 ڕۆژ</string>
     <string name="mute_forever">بێدەنگ کردن بۆ هەمیشە</string>
 
+    <!-- deprecated -->
     <string name="share_location_for_5_minutes">بۆ ماوەی 5 خولەک</string>
+
     <string name="share_location_for_30_minutes">بۆ ماوەی 30 خولەک</string>
     <string name="share_location_for_one_hour">بۆ ماوەی 1 کاتژمێر</string>
     <string name="share_location_for_two_hours">بۆ ماوەی 2 کاتژمێر</string>
     <string name="share_location_for_six_hours">بۆ ماوەی 6 کاتژمێر</string>
-
     <plurals name="ask_send_following_n_files_to">
         <item quantity="one">ئەم پەڕگەیە دەنێریت بۆ %s؟</item>
         <item quantity="other">ئەم %d پەڕگەیە دەنێریت بۆ %s؟</item>
     </plurals>
     <string name="file_saved_to">پەڕگەکە پاشەکەوت کرا لە \"%1$s\".</string>
 
+    <!-- deprecated, use ask_forward_messages -->
     <string name="ask_forward">ئەو پەیامانە دەنێریت بۆ %1$s؟</string>
     <string name="ask_forward_multiple">ئەو پەیامانە دەنێریت بۆ نێو %1$dوتووێژ؟</string>
     <string name="ask_export_attachment">پێوەلکاوەکە هەناردە دەکەیت؟ هەناردەکردنی پێوەلکاوەکان وادەکات نەرمامێرەکانی دیکەی سەر مۆبایلەکەت بتوانن دەستیان بەو بەڵگە هەناردەکراوە بگات.\n\n بەردەوام دەبیت؟</string>
@@ -235,11 +234,9 @@
     <string name="ask_remove_members">%1$sلە کۆڕ دەخەیتەدەر؟</string>
     <string name="open_url_confirmation">دەتەوێت ئەم بەستەرە بکەیتەوە؟</string>
 
-
     <!-- contact list -->
     <string name="contacts_title">بەردەنگەکان</string>
     <string name="contacts_type_email_above">ئیمەیلەکە لە سەرەوە بنووسە</string>
-
 
     <!-- chatlist and chat view -->
     <plurals name="chat_archived">
@@ -279,9 +276,7 @@
     <string name="attachment_failed_to_load">پێوەلکاوەکە دانەگیرا</string>
     <!-- mailing lists -->
     <string name="mailing_list">لیستەی ئیمەیلەکان</string>
-    <!-- map -->
-    <string name="filter_map_on_time">شوێنەکان لە نێو چوارچێوەی کاتدا پیشان بدرێت؟</string>
-    <string name="show_location_traces">پیشاندانی شوێنپێ</string>
+
     <!-- search -->
     <string name="search">گەڕان</string>
     <string name="search_explain">بگەڕە بۆ وتووێژەکان و بەردەنگەکان و پەیامەکان</string>
@@ -292,6 +287,7 @@
     <string name="remove_group_image">سڕینەوەی وێنەی کۆڕ</string>
     <string name="change_group_image">گۆڕینی ناوی کۆڕ</string>
     <string name="group_create_button">کۆڕێک درووست بکە</string>
+    <!-- deprecated, use please_enter_chat_name -->
     <string name="group_please_enter_group_name">تکایە ناوێک بنووسە بۆ کۆڕەکە.</string>
     <string name="group_add_members">ئەندام زیاد بکە</string>
     <string name="group_self_not_in_group">بۆ ئەم کردارە دەبێت ئەندامی کۆڕەکە بیت.</string>
@@ -340,8 +336,6 @@
     <string name="forward_to">هەناردن بۆ...</string>
     <string name="share_text_multiple_chats">ئەم دەقە دەنێریت بۆ %1$d وتووێژ؟n\n\"%2$s\"</string>
     <!-- preferences -->
-    <string name="pref_using_custom">بەکارهێنانی دڵخواز: %s</string>
-    <string name="pref_using_default">بەکارهێنانی بنەڕەتی: %s</string>
     <string name="pref_profile_info_headline">زانیارییەکانی پرۆفایلەکەت</string>
     <string name="pref_profile_photo">وێنەی لادیمەن</string>
     <string name="pref_blocked_contacts">هەژمارە ئاستەنگکراوەکان</string>
@@ -349,6 +343,7 @@
     <string name="pref_your_name">ناو</string>
     <!-- Label of the Bio/Signature/Status/Motto field -->
     <string name="pref_default_status_label">دەقی واژۆ</string>
+    <!-- Option name for changing behaviour of the "Enter key" to sending out a message directly (instead of adding new line). If in doubt, please refer to a similar option in other messengers. -->
     <string name="pref_enter_sends">کلیلی \"ئینتەر\" بنێرێت</string>
     <string name="pref_enter_sends_explain">دەستنان بە کلیلی \"ئینتەر\"دا، پەیامەکان دەنێرێت.</string>
     <string name="pref_outgoing_media_quality">چۆنێتی ڕەنگاڵە هەناردنییەکان</string>
@@ -361,13 +356,12 @@
     <string name="pref_notifications_priority">پێشترێتی</string>
     <string name="pref_notifications_explain">وریاکەرەوەکانی سیستەم بۆ پەیامە نوێکان چالاک بکە</string>
     <string name="pref_show_notification_content">دەقی پەیامەکە لەنێو وریاکەرەوەکاندا پیشان بدە</string>
+    <!-- deprecated -->
     <string name="pref_show_notification_content_explain">ناوی پەیامنێرەکە و وشە سەرەتاییەکانی دەقی پەیامەکە لەناو وریاکەرەوەکەدا پیشان بدە</string>
     <string name="pref_led_color">ڕەنگی چرای LED</string>
     <string name="pref_sound">دەنگ</string>
     <string name="pref_silent">بێدەنگ</string>
     <string name="pref_privacy">پاراستنی تاکەکەسی</string>
-    <!-- deprecated, use pref_chats -->
-    <string name="pref_chats_and_media">وتووێژ و ڕەنگاڵەکان</string>
     <string name="pref_system_default">بنەڕەتی سیستەم</string>
     <!-- Translators: as in "opposite of dark" -->
     <string name="pref_light_theme">ڕووناک</string>
@@ -388,15 +382,20 @@
     <string name="pref_backup_explain">یەدەک گرتن لە وتووێژەکان و دانانی لەسەر بیرگەی دەرەکی</string>
     <string name="pref_backup_export_explain">یەدەک یارمەتیت دەدات تاکوو نەرمامێرەکە لەسەر ئەم ئامێرە یان ئامێرێکی دیکە دەبمەزرێنیتەوە.\n\n یەدەکەکە بریتی دەبێت لە هەموو پەیامەکان و بەردەنگەکان و وتووێژەکان و ڕێکخستنی ئۆتۆکریپتی ئەمسەر-ئەوسەر. پەڕگەی یەدەکەکە لە شوێنێکی قایمدا بپارێزە یان بە زووترین کات بیسڕەوە.</string>
     <string name="pref_backup_export_start_button">دەستپێبکە</string>
-    <string name="pref_backup_written_to_x">یەدەک بە سەرکەوتوویی لە \"%1$s\"دا  پاشەکەوت کرا.</string>
+    <string name="pref_backup_written_to_x">یەدەک بە سەرکەوتوویی لە \"%1$s\"دا پاشەکەوت کرا.</string>
     <!-- No need to translate "Wallpaper" literally. Chose what is common in your language for a "Wallpaper" or a "Background". Avoid adding the term "image" here, as the "Wallpaper" may also be just a single color. -->
     <string name="pref_background">پشتخان</string>
     <string name="pref_background_btn_default">بەکارهێنانی وێنەی بنەڕەتی</string>
     <string name="pref_background_btn_gallery">هەڵبژاردن لە پیشانگا</string>
+    <!-- deprecated -->
     <string name="pref_auto_folder_moves">هەناردنی خۆکار بۆ بوخچەی دێڵتاچات</string>
+    <!-- deprecated -->
     <string name="pref_show_emails">پیشاندانی ئیمەیلە کلاسیکەکان</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_no">نا، بەس چاتەکان</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_accepted_contacts">بۆ بەردەنگە پەسندکراوەکان</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_all">هەموو</string>
     <string name="pref_experimental_features">ئەو تایبەتمەندییانەی بۆ تاقی کردنەوەن</string>
     <string name="pref_background_default">پشتخانی بنەڕەتی</string>
@@ -423,6 +422,7 @@
     <!-- automatically delete message -->
     <string name="delete_old_messages">سڕینەوەی پەیامە کۆنەکان</string>
     <string name="autodel_device_title">سڕینەوەی پەیامەکان لەسەر مۆبایەلەکت</string>
+    <!-- deprecated -->
     <string name="autodel_server_title">سڕینەوەی پەیامەکان لەسەر سێرڤەر</string>
     <string name="autodel_confirm">تێگەیشتم، هەموو ئەم پەیامانە بسڕەوە</string>
     <!-- "At once" in the meaning of "Immediately", without any intervening time. -->
@@ -463,7 +463,7 @@
     <string name="qraccount_ask_create_and_login">دەتەوێت ناونیشانی ئیمەیلێکی نوێ لەسەر \"%1$s\" درووست بکەیت و لەوێ بچیتە ژوورەوە؟</string>
     <string name="qraccount_qr_code_cannot_be_used">ناتوانی لە کۆدی QRە سکان کراوەکە کەڵک بگریت بۆ پێکهێنانی هەژمارێکی نوێ.</string>
     <string name="contact_verified">%1$s پشتڕاست کرایەوە</string>
-    <!-- notifications  -->
+    <!-- notifications -->
     <string name="notify_reply_button">وەڵام دانەوە</string>
     <string name="notify_new_message">پەیامی نوێ</string>
     <string name="notify_background_connection_enabled">پەیوەندی پشتخان چالاک کرا</string>
@@ -480,8 +480,6 @@
     <string name="perm_explain_access_to_mic_denied">بۆ هەناردنی پەیامی دەنگی، بچۆ بەشی ڕێکخستنەکانی نەرمامێرەکە، لە بەشی \"ڕێگەپێدان\"دا، \"مایک\" چالاک بکەوە.</string>
     <string name="perm_explain_access_to_storage_denied">بۆ هەناردن و وەرگرتنی پەڕگەکان، بچۆ بەشی ڕێکخستنەکانی نەرمامێرەکە، لە بەشی \"ڕێگەپێدان\"دا، \"بیرگە\" چالاک بکەوە.</string>
     <string name="perm_explain_access_to_location_denied">بۆ لکاندنی شوێنێک، بچۆ بەشی ڕێکخستنەکانی نەرمامێرەکە، لە بەشی \"ڕێگەپێدان\"دا، \"شوێن\" چالاک بکەوە.</string>
-    <!-- strings introduced on desktop. we want to share strings between the os, in general, please do not add generic strings here -->
-    <string name="about_offical_app_desktop">ئەمە نەرمامێری فەرمی دێڵتا چاتە بۆ کۆمپووتەری ڕوومێز.</string>
     <string name="welcome_desktop">بەخێر بێن بۆ دێڵتا چات</string>
     <string name="global_menu_preferences_language_desktop">زمان</string>
     <string name="global_menu_file_desktop">پەڕگە</string>
@@ -517,7 +515,6 @@
     <string name="a11y_delivery_status_invalid">دۆخی گەیشتن ناڕەوایە</string>
     <string name="a11y_message_context_menu_btn_label">چالاکییەکانی پەیام</string>
     <string name="a11y_disappearing_messages_activated">پەیامە خۆشارەوەکان چالاک کرا</string>
-
     <!-- iOS permissions, copy from "deltachat-ios/Info.plist", which is used on missing translations in "deltachat-ios/LANG.lproj/InfoPlist.strings" -->
     <string name="InfoPlist_NSCameraUsageDescription">دێڵتا چات بۆ گرتن و هەناردنی وێنە و فلیم و سکان کردنی کۆدی QR، کامێراکەت بەکاردەهێنێت.</string>
     <string name="InfoPlist_NSMicrophoneUsageDescription">دێڵتا چات بۆ تۆمار کردن و هەناردنی دەنگ و هەروەها ڤیدیۆی دەنگدار، مایکەکەت بەکاردەهێنێت.</string>

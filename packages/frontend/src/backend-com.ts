@@ -25,12 +25,6 @@ export namespace EffectfulBackendActions {
     runtime.deleteWebxdcAccountData(account_id)
   }
 
-  // TODO make a core events for these chatlist events instead of faking them in desktop
-  export async function acceptChat(account_id: number, chatId: number) {
-    await BackendRemote.rpc.acceptChat(account_id, chatId)
-    window.__refetchChatlist && window.__refetchChatlist()
-  }
-
   export async function blockChat(accountId: number, chatId: number) {
     await BackendRemote.rpc.blockChat(accountId, chatId)
     clearNotificationsForChat(accountId, chatId)
@@ -38,11 +32,6 @@ export namespace EffectfulBackendActions {
 
   export async function deleteChat(accountId: number, chatId: number) {
     await BackendRemote.rpc.deleteChat(accountId, chatId)
-    clearNotificationsForChat(accountId, chatId)
-  }
-
-  export async function marknoticedChat(accountId: number, chatId: number) {
-    await BackendRemote.rpc.marknoticedChat(accountId, chatId)
     clearNotificationsForChat(accountId, chatId)
   }
 }

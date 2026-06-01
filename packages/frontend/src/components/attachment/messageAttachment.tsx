@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useContext, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { filesize } from 'filesize'
 
@@ -6,26 +6,27 @@ import { openAttachmentInShell } from '../message/messageFunctions'
 import {
   isDisplayableByFullscreenMedia,
   isImage,
-  isVideo,
-  isAudio,
   getExtension,
   dragAttachmentOut,
   MessageTypeAttachmentSubset,
 } from './Attachment'
 import { runtime } from '@deltachat-desktop/runtime-interface'
-import { getDirection } from '../../utils/getDirection'
 import { Type } from '../../backend-com'
 import FullscreenMedia, {
   NeighboringMediaMode,
 } from '../dialogs/FullscreenMedia'
-import useTranslationFunction from '../../hooks/useTranslationFunction'
 import useDialog from '../../hooks/dialog/useDialog'
-import AudioPlayer from '../AudioPlayer'
+import useConfirmationDialog from '../../hooks/dialog/useConfirmationDialog'
+import { AudioPlayer } from '../AudioPlayer'
+import { NextVoiceMessagePlayerContext } from '../../contexts/NextVoiceMessagePlayerContext'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { AudioAttachment as GalleryAudioAttachment } from './galleryAttachment'
 import { T } from '@deltachat/jsonrpc-client'
 import { selectedAccountId } from '../../ScreenController'
 import { BackendRemote } from '../../backend-com'
 import { useRpcFetch } from '../../hooks/useFetch'
 import { useHasChanged2 } from '../../hooks/useHasChanged'
+import useTranslationFunction from '../../hooks/useTranslationFunction'
 
 type AttachmentProps = {
   text?: string
@@ -38,16 +39,29 @@ export default function Attachment({
   message,
   tabindexForInteractiveContents,
 }: AttachmentProps) {
-  const tx = useTranslationFunction()
   const { openDialog } = useDialog()
+  const openConfirmationDialog = useConfirmationDialog()
+  const tx = useTranslationFunction()
   if (!message.file) {
     return null
   }
-  const direction = getDirection(message)
-  const onClickAttachment = (ev: any) => {
-    if (message.viewType === 'Sticker') return
+  const onClickAttachment = async (ev: any) => {
     ev.stopPropagation()
-    if (isDisplayableByFullscreenMedia(message.fileMime)) {
+    if (message.viewType === 'Sticker') {
+      const confirmed = await openConfirmationDialog({
+        message: tx('ask_add_sticker_to_collection'),
+        confirmLabel: tx('add_to_sticker_collection'),
+      })
+      if (confirmed) {
+        BackendRemote.rpc.miscSaveSticker(
+          selectedAccountId(),
+          message.id,
+          tx('saved')
+        )
+      }
+      return
+    }
+    if (isDisplayableByFullscreenMedia(message.viewType)) {
       openDialog(FullscreenMedia, {
         msg: message,
         neighboringMedia: NeighboringMediaMode.Chat,
@@ -56,6 +70,8 @@ export default function Attachment({
       openAttachmentInShell(message)
     }
   }
+
+  const maxStickerSize = 200
 
   /**
    * height has to be calculated before images are loaded to enable
@@ -77,10 +93,9 @@ export default function Attachment({
     const minHeight = 50 // needed for readable footer
     const maxLandscapeWidth = 450 // also set by css
     const maxPortraitHeight = 450 // also set by css
-    const stickerHeight = 200
 
     if (message.viewType === 'Sticker') {
-      return stickerHeight
+      return maxStickerSize
     }
 
     const height = message.dimensionsHeight
@@ -122,16 +137,7 @@ export default function Attachment({
   const withCaption = Boolean(text)
   // For attachments which aren't full-frame
   const withContentBelow = withCaption
-  if (isImage(message.fileMime) || message.viewType === 'Sticker') {
-    if (!message.file) {
-      return (
-        <div
-          className={classNames('message-attachment-broken-media', direction)}
-        >
-          {tx('attachment_failed_to_load')}
-        </div>
-      )
-    }
+  if (isImage(message.viewType) || message.viewType === 'Sticker') {
     return (
       <button
         type='button'
@@ -150,28 +156,17 @@ export default function Attachment({
           )}
           src={runtime.transformBlobURL(message.file)}
           height={calculateHeight(message)}
+          width={message.viewType === 'Sticker' ? maxStickerSize : undefined}
         />
       </button>
     )
-  } else if (isVideo(message.fileMime)) {
-    if (!message.file) {
-      return (
-        <button
-          type='button'
-          onClick={onClickAttachment}
-          tabIndex={tabindexForInteractiveContents}
-          style={{ cursor: 'pointer' }}
-          className={classNames('message-attachment-broken-media', direction)}
-        >
-          {tx('attachment_failed_to_load')}
-        </button>
-      )
-    }
+  } else if (message.viewType === 'Video') {
     // the native fullscreen option is better right now so we don't need to open our own one
     return (
       <div
         className={classNames(
           'message-attachment-media',
+          'video',
           withCaption ? 'content-below' : null
         )}
       >
@@ -185,7 +180,7 @@ export default function Attachment({
         />
       </div>
     )
-  } else if (isAudio(message.fileMime)) {
+  } else if (message.viewType === 'Audio' || message.viewType === 'Voice') {
     return (
       <div
         className={classNames(
@@ -193,16 +188,15 @@ export default function Attachment({
           withContentBelow ? 'content-below' : null
         )}
       >
-        <AudioPlayer
-          src={runtime.transformBlobURL(message.file)}
-          // Despite the element having multiple interactive
-          // (pseudo?) elements inside of it, tabindex applies to all of them.
-          tabIndex={tabindexForInteractiveContents}
+        <AudioAttachment
+          // Help TypeScript out a little.
+          message={message as typeof message & { file: typeof message.file }}
+          tabindexForInteractiveContents={tabindexForInteractiveContents}
         />
       </div>
     )
   } else {
-    const { fileName, fileBytes, fileMime } = message
+    const { fileName, fileBytes, fileMime, file } = message
     const extension = getExtension(message)
     return (
       <button
@@ -217,7 +211,7 @@ export default function Attachment({
         <div
           className='file-icon'
           draggable='true'
-          onDragStart={dragAttachmentOut.bind(null, message.file)}
+          onDragStart={ev => dragAttachmentOut(file, fileName, ev)}
           title={fileMime || 'null'}
         >
           {extension ? (
@@ -233,6 +227,36 @@ export default function Attachment({
       </button>
     )
   }
+}
+/**
+ * @see also {@linkcode GalleryAudioAttachment}.
+ */
+function AudioAttachment(props: {
+  message: Type.Message & { file: string }
+  tabindexForInteractiveContents: number
+}) {
+  const nextVoiceMessagePlayerCtx = useContext(NextVoiceMessagePlayerContext)
+  const src = useMemo(
+    () => runtime.transformBlobURL(props.message.file),
+    [props.message.file]
+  )
+
+  return (
+    <AudioPlayer
+      src={src}
+      // Despite the element having multiple interactive
+      // (pseudo?) elements inside of it, tabindex applies to all of them.
+      tabIndex={props.tabindexForInteractiveContents}
+      onPlayNonProgrammatic={() =>
+        nextVoiceMessagePlayerCtx.setCurrMessage({
+          accountId: selectedAccountId(),
+          chatId: props.message.chatId,
+          messageId: props.message.id,
+          src,
+        })
+      }
+    />
+  )
 }
 
 export function DraftAttachment({
@@ -264,7 +288,7 @@ export function DraftAttachment({
   if (!attachment) {
     return null
   }
-  if (isImage(attachment.fileMime)) {
+  if (isImage(attachment.viewType)) {
     return (
       <div className={classNames('message-attachment-media')}>
         <img
@@ -273,7 +297,7 @@ export function DraftAttachment({
         />
       </div>
     )
-  } else if (isVideo(attachment.fileMime)) {
+  } else if (attachment.viewType === 'Video') {
     return (
       <div className={classNames('message-attachment-media')}>
         <video
@@ -283,13 +307,16 @@ export function DraftAttachment({
         />
       </div>
     )
-  } else if (isAudio(attachment.fileMime)) {
+  } else if (
+    attachment.viewType === 'Audio' ||
+    attachment.viewType === 'Voice'
+  ) {
     return <AudioPlayer src={runtime.transformBlobURL(attachment.file || '')} />
   } else if (isViewTypeWebxdc) {
     const iconUrl = runtime.getWebxdcIconURL(selectedAccountId(), attachment.id)
     return (
       <div className='media-attachment-webxdc'>
-        <img className='icon' src={iconUrl} alt='app icon' />
+        <img className='icon' src={iconUrl} alt='' />
         <div className='text-part'>
           <div className='name'>
             {/* `webxdcInfoFetch` is never `null` here, but TypeScript
@@ -313,7 +340,7 @@ export function DraftAttachment({
         <div
           className='file-icon'
           draggable='true'
-          onDragStart={ev => file && dragAttachmentOut(file, ev)}
+          onDragStart={ev => file && dragAttachmentOut(file, fileName, ev)}
           title={fileMime || 'null'}
         >
           {extension ? (

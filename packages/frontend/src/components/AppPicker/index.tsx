@@ -22,7 +22,7 @@ import {
 import SearchInputButton from '../SearchInput/SearchInputButton'
 import { ClickableLink } from '../helpers/ClickableLink'
 import { useFetch, useRpcFetch } from '../../hooks/useFetch'
-import { unknownErrorToString } from '../helpers/unknownErrorToString'
+import { unknownErrorToString } from '@deltachat-desktop/shared/unknownErrorToString'
 
 const log = getLogger('renderer/components/AppPicker')
 
@@ -272,7 +272,7 @@ export function AppPicker({ onAppSelected }: Props) {
       <div className={styles.appItem}>
         <img
           src={icons[app.app_id] ?? './images/icons/image_outline.svg'}
-          alt={`${app.name} icon`}
+          alt=''
           className={styles.appIcon}
         />
         <div className={styles.appInfo}>
@@ -377,7 +377,7 @@ export function AppPicker({ onAppSelected }: Props) {
                 <img
                   className={styles.categoryIcon}
                   src={`./images/${category}.svg`}
-                  alt={category}
+                  alt=''
                 />
                 <div className={styles.categoryTitle}>
                   {categoryTitle(category)}

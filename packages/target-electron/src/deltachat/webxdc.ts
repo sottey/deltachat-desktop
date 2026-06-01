@@ -10,15 +10,13 @@ import Mime from 'mime-types'
 import {
   Menu,
   nativeImage,
-  shell,
   MenuItemConstructorOptions,
   dialog,
-  clipboard,
   IpcMainInvokeEvent,
 } from 'electron'
 import { join } from 'path'
 import { platform } from 'os'
-import { readdir, stat, rmdir, writeFile, readFile } from 'fs/promises'
+import { readdir, stat, rmdir, writeFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import type DeltaChatController from './controller.js'
 import { getLogger } from '../../../shared/logger.js'
@@ -27,7 +25,7 @@ import { truncateText } from '@deltachat-desktop/shared/util.js'
 import { tx } from '../load-translations.js'
 import { Bounds, DcOpenWebxdcParameters } from '../../../shared/shared-types.js'
 import { DesktopSettings } from '../desktop_settings.js'
-import { window as main_window } from '../windows/main.js'
+import { window as main_window, send } from '../windows/main.js'
 import { writeTempFileFromBase64 } from '../ipc.js'
 import {
   getAppMenu,
@@ -41,6 +39,7 @@ import { setContentProtection } from '../content-protection.js'
 import { Server } from 'net'
 import { openHelpWindow } from '../windows/help.js'
 import { getCurrentLocaleDate } from '../load-translations.js'
+import { openExternalHttpOrPromptToCopy } from './link-clicks.js'
 
 const log = getLogger('main/deltachat/webxdc')
 
@@ -49,11 +48,15 @@ type AppInstance = {
   msgId: number
   accountId: number
   internet_access: boolean
-  selfAddr: string
   displayName: string
-  sendUpdateInterval: number
-  sendUpdateMaxSize: number
-}
+} & Pick<
+  T.WebxdcMessageInfo,
+  | 'selfAddr'
+  | 'sendUpdateInterval'
+  | 'sendUpdateMaxSize'
+  | 'isAppSender'
+  | 'isBroadcast'
+>
 const open_apps: {
   [instanceId: string]: AppInstance
 } = {}
@@ -96,12 +99,6 @@ const ALLOWED_PERMISSIONS: string[] = [
   // Games might do that too
   'fullscreen',
 ]
-
-/**
- * Path to the static webxdc wrapper HTML file which contains the
- * iframe that will host the webxdc app
- */
-const WRAPPER_PATH = 'webxdc-wrapper.45870014933640136498.html'
 
 /**
  * Prefix for the webxdc bounds UI configuration
@@ -281,7 +278,14 @@ export default class DCWebxdc {
       defaultSize: Size = DEFAULT_SIZE_WEBXDC
     ) => {
       const { webxdcInfo, chatName, accountId, href } = p
-      let base64EncodedHref = ''
+
+      const loadURL = (webxdcWindow: BrowserWindow, url: string) => {
+        webxdcWindow.webContents.loadURL(url, {
+          extraHeaders: 'Content-Security-Policy: ' + CSP,
+        })
+      }
+
+      let fullHref: string | undefined = undefined
       const appId = `${accountId}.${msg_id}`
       const appURL = `webxdc://${appId}.webxdc`
       if (href && href !== '') {
@@ -289,23 +293,21 @@ export default class DCWebxdc {
         // relative href needs a base to construct URL
         const url = new URL(href, 'http://dummy')
         const relativeUrl = url.pathname + url.search + url.hash
-        // make href eval safe
-        base64EncodedHref = Buffer.from(appURL + relativeUrl).toString('base64')
+        fullHref = appURL + relativeUrl
       }
-      if (open_apps[`${appId}`]) {
+      const alreadyOpenApp = open_apps[appId]
+      if (alreadyOpenApp) {
         log.warn(
           'webxdc instance for this app is already open, trying to focus it',
           { msg_id }
         )
-        const window = open_apps[`${appId}`].win
+        const window = alreadyOpenApp.win
         if (window.isMinimized()) {
           window.restore()
         }
-        if (base64EncodedHref !== '') {
+        if (fullHref != undefined) {
           // passed from a WebxdcInfoMessage
-          window.webContents.executeJavaScript(
-            `window.webxdc_internal.setLocationUrl("${base64EncodedHref}")`
-          )
+          loadURL(window, fullHref)
         }
         window.focus()
         return
@@ -386,6 +388,8 @@ export default class DCWebxdc {
         displayName: p.displayname || webxdcInfo.selfAddr || 'unknown',
         sendUpdateInterval: webxdcInfo.sendUpdateInterval,
         sendUpdateMaxSize: webxdcInfo.sendUpdateMaxSize,
+        isAppSender: webxdcInfo.isAppSender,
+        isBroadcast: webxdcInfo.isBroadcast,
       }
 
       const isMac = platform() === 'darwin'
@@ -400,15 +404,6 @@ export default class DCWebxdc {
           {
             label: tx('global_menu_view_desktop'),
             submenu: [
-              ...(DesktopSettings.state.enableWebxdcDevTools
-                ? [
-                    {
-                      label: tx('global_menu_view_developer_tools_desktop'),
-                      role: 'toggleDevTools',
-                    } as MenuItemConstructorOptions,
-                  ]
-                : []),
-              { type: 'separator' },
               {
                 accelerator: 'CmdOrCtrl+=',
                 label: tx('menu_zoom_in'),
@@ -440,6 +435,20 @@ export default class DCWebxdc {
                 },
               },
               { role: 'togglefullscreen' },
+              ...(DesktopSettings.state.enableWebxdcDevTools
+                ? [
+                    { type: 'separator' } as MenuItemConstructorOptions,
+                    {
+                      label: tx('global_menu_view_developer_desktop'),
+                      submenu: [
+                        {
+                          label: tx('global_menu_view_developer_tools_desktop'),
+                          role: 'toggleDevTools',
+                        } as MenuItemConstructorOptions,
+                      ],
+                    },
+                  ]
+                : []),
             ],
           },
           {
@@ -449,31 +458,11 @@ export default class DCWebxdc {
                 label: tx('source_code'),
                 enabled: !!webxdcInfo.sourceCodeUrl,
                 icon: app_icon?.resize({ width: 24 }) || undefined,
-                click: () => {
-                  if (
-                    webxdcInfo.sourceCodeUrl
-                      ?.toLowerCase()
-                      .startsWith('https:') ||
-                    webxdcInfo.sourceCodeUrl?.toLowerCase().startsWith('http:')
-                  ) {
-                    shell.openExternal(webxdcInfo.sourceCodeUrl)
-                  } else if (webxdcInfo.sourceCodeUrl) {
-                    const url = webxdcInfo.sourceCodeUrl
-                    dialog
-                      .showMessageBox(webxdcWindow, {
-                        buttons: [tx('no'), tx('menu_copy_link_to_clipboard')],
-                        message: tx(
-                          'ask_copy_unopenable_link_to_clipboard',
-                          url
-                        ),
-                      })
-                      .then(({ response }) => {
-                        if (response == 1) {
-                          clipboard.writeText(url)
-                        }
-                      })
-                  }
-                },
+                click: () =>
+                  openExternalHttpOrPromptToCopy(
+                    webxdcWindow,
+                    webxdcInfo.sourceCodeUrl ?? ''
+                  ),
               },
               {
                 type: 'separator',
@@ -524,25 +513,12 @@ export default class DCWebxdc {
       webxdcWindow.once('close', saveBounds.bind(this))
 
       webxdcWindow.once('ready-to-show', () => {
-        if (base64EncodedHref !== '') {
-          // passed from a WebxdcInfoMessage
-          webxdcWindow.webContents.executeJavaScript(
-            `window.webxdc_internal.setLocationUrl("${base64EncodedHref}")`
-          )
-        }
         // also saving at the start, because this.webxdcCleanup uses this
         // to find out which webxdc apps were opened at some point in time.
         saveBounds()
       })
 
-      webxdcWindow.webContents.loadURL(appURL + '/' + WRAPPER_PATH, {
-        extraHeaders: 'Content-Security-Policy: ' + CSP,
-      })
-
-      // prevent reload and navigation of wrapper page
-      webxdcWindow.webContents.on('will-navigate', ev => {
-        ev.preventDefault()
-      })
+      loadURL(webxdcWindow, fullHref ?? appURL + '/index.html')
 
       let denyPreventUnload = false
       // Otherwise the app can make itself uncloseable.
@@ -629,9 +605,6 @@ export default class DCWebxdc {
           }
         }, 150)
       })
-
-      // we would like to make `mailto:`-links work,
-      // but https://github.com/electron/electron/pull/34418 is not merged yet.
 
       // prevent webxdc content from setting the window title
       webxdcWindow.on('page-title-updated', ev => {
@@ -791,12 +764,7 @@ export default class DCWebxdc {
           return
         }
         // forward to main window
-        main_window?.webContents.send(
-          'webxdc.sendToChat',
-          file,
-          text,
-          app.accountId
-        )
+        send('webxdc.sendToChat', file, text, app.accountId)
         main_window?.focus()
       }
     )
@@ -1059,8 +1027,8 @@ export default class DCWebxdc {
   }
 
   _closeAll() {
-    for (const open_app of Object.keys(open_apps)) {
-      open_apps[open_app].win.close()
+    for (const open_app of Object.values(open_apps)) {
+      open_app.win.close()
     }
   }
 }
@@ -1215,17 +1183,7 @@ async function webxdcProtocolHandler(
     mimeType = undefined
   }
 
-  if (filename === WRAPPER_PATH) {
-    const wrapperBuffer = await readFile(
-      join(htmlDistDir(), '/webxdc_wrapper.html')
-    )
-    return makeResponse({
-      body: new Uint8Array(wrapperBuffer),
-      responseInit: {},
-      mime_type: mimeType,
-      cspAllowHttpsImgSrc,
-    })
-  } else if (filename === 'webxdc.js') {
+  if (filename === 'webxdc.js') {
     const displayName = Buffer.from(open_apps[id].displayName).toString(
       'base64'
     )
@@ -1234,11 +1192,12 @@ async function webxdcProtocolHandler(
     // `window.webxdc` is found there: static/webxdc-preload.js
     return makeResponse({
       body: Buffer.from(
-        `window.parent.webxdc_internal.setup("${selfAddr}","${displayName}", ${Number(
+        `window.webxdc_internal.setup("${selfAddr}","${displayName}", ${Number(
           open_apps[id].sendUpdateInterval
-        )}, ${Number(open_apps[id].sendUpdateMaxSize)})
-        window.webxdc = window.parent.webxdc
-        window.webxdc_custom = window.parent.webxdc_custom`
+        )}, ${Number(open_apps[id].sendUpdateMaxSize)},
+          ${Boolean(open_apps[id].isAppSender)},
+          ${Boolean(open_apps[id].isBroadcast)},
+        )`
       ),
       responseInit: {},
       mime_type: mimeType,
@@ -1271,8 +1230,7 @@ async function webxdcProtocolHandler(
 }
 
 function lookupAppFromEvent(event: IpcMainInvokeEvent): AppInstance | null {
-  for (const key of Object.keys(open_apps)) {
-    const app = open_apps[key]
+  for (const app of Object.values(open_apps)) {
     if (app.win.webContents === event.sender) {
       return app
     }

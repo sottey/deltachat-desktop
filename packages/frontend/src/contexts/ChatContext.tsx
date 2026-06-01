@@ -1,14 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useMemo, useState } from 'react'
 
 import { ActionEmitter, KeybindAction } from '../keybindings'
-import { markChatAsSeen, saveLastChatId } from '../backend/chat'
+import { marknoticedChat, saveLastChatId } from '../backend/chat'
 import { BackendRemote } from '../backend-com'
 
 import type { RefObject, PropsWithChildren } from 'react'
 import type { T } from '@deltachat/jsonrpc-client'
-import { useRpcFetch } from '../hooks/useFetch'
+import { useFetch } from '../hooks/useFetch'
 import { getLogger } from '@deltachat-desktop/shared/logger'
-import { useHasChanged2 } from '../hooks/useHasChanged'
 
 const log = getLogger('ChatContext')
 
@@ -48,29 +47,89 @@ type Props = {
 
 export const ChatContext = React.createContext<ChatContextValue | null>(null)
 
+/**
+ * This context tries to be capable of handling `accountId` changing,
+ * i.e. it does not need to be behind `key={accountId}`.
+ */
 export const ChatProvider = ({
   children,
   accountId,
   unselectChatRef,
 }: PropsWithChildren<Props>) => {
-  const [chatId, setChatId] = useState<number | undefined>()
+  const sessionId = useMemo(
+    () => Symbol(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [accountId]
+  )
+  const sessionIdRef = useRef(sessionId)
+  sessionIdRef.current = sessionId
+
+  // When the `accountId` changes, we invalidate `chatId`,
+  // and the `setChatId` function.
+  //
+  // We usually utilize `key={accountId}` for this,
+  // but applying `key=` to a React context provider
+  // makes _all_ its descendants (as opposed just the components
+  // that depend on the context) re-render, including `AccountListSidebar`.
+  const [chatId_, setChatId_] = useState<
+    undefined | { sessionId: symbol; chatId: number }
+  >(undefined)
+  const chatId =
+    chatId_ == undefined || chatId_.sessionId !== sessionId
+      ? undefined
+      : chatId_.chatId
+  const setChatId = useCallback(
+    (newChatId: number | undefined) => {
+      if (sessionId !== sessionIdRef.current) {
+        // This may happen when `selectChat` gets called
+        // from `Promise.then` or `setTimeout` and such.
+        log.info(
+          "Called setChatId, but we've already switched the account after the closure was created, ignoring"
+        )
+        return
+      }
+      setChatId_(
+        newChatId == undefined ? undefined : { chatId: newChatId, sessionId }
+      )
+    },
+    [sessionId]
+  )
+
   useEffect(() => {
     window.__selectedChatId = chatId
   }, [chatId])
 
-  const chatFetch = useRpcFetch(
-    BackendRemote.rpc.getFullChatById,
+  const chatFetch = useFetch(
+    useCallback(
+      async (accountId: number, chatId: number) => ({
+        chat: await BackendRemote.rpc.getFullChatById(accountId, chatId),
+        accountId,
+      }),
+      []
+    ),
     accountId != undefined && chatId != undefined ? [accountId, chatId] : null
   )
   if (chatFetch?.result?.ok === false) {
     log.error('Failed to fetch chat', chatFetch.result.err)
   }
-  const chatWithLinger = chatFetch?.lingeringResult?.ok
-    ? chatFetch.lingeringResult.value
-    : undefined
-  const chatNoLinger = chatFetch?.result?.ok
-    ? chatFetch.result.value
-    : undefined
+  const chatWithLinger =
+    chatFetch?.lingeringResult?.ok &&
+    // Make sure that the chat belongs to the current account,
+    // to prevent data leaking between accounts, and weird race-y bugs.
+    //
+    // I think now that we have `sessionId` this check is no longer needed,
+    // because that basically ensures that `chatId` is always valid
+    // for the current `accountId`?
+    accountId === chatFetch.lingeringResult.value.accountId
+      ? chatFetch.lingeringResult.value.chat
+      : undefined
+  const chatNoLinger =
+    chatFetch?.result?.ok &&
+    // For non-lingering result we expect `accountId` to always be equal,
+    // but let's double-check + to be consistent with the same check above.
+    accountId === chatFetch.result.value.accountId
+      ? chatFetch.result.value.chat
+      : undefined
 
   const selectChat = useCallback<SelectChat>(
     (nextAccountId: number, nextChatId: number) => {
@@ -127,21 +186,24 @@ export const ChatProvider = ({
       setChatId(nextChatId)
 
       // Clear system notifications and mark chat as seen in backend
-      markChatAsSeen(accountId, nextChatId)
+      marknoticedChat(accountId, nextChatId)
 
       // Remember that user selected this chat to open it again when they come back
       saveLastChatId(accountId, nextChatId)
     },
-    [accountId, chatId]
+    [accountId, chatId, setChatId]
   )
 
   const unselectChat = useCallback<UnselectChat>(() => {
     setChatId(undefined)
-  }, [])
+  }, [setChatId])
 
+  // Callback ref pattern: keeping ref in sync for external callers
   unselectChatRef.current = unselectChat
 
-  if (useHasChanged2(chatNoLinger?.id) && chatNoLinger != undefined) {
+  const lastArchivedCheckChatId = useRef<number | undefined>(undefined)
+  if (chatNoLinger != undefined && chatId !== lastArchivedCheckChatId.current) {
+    lastArchivedCheckChatId.current = chatId
     // Switch to "archived" view if selected chat is there
     // @TODO: We probably want this to be part of the UI logic instead
     ActionEmitter.emitAction(

@@ -5,17 +5,13 @@ import { runtime } from '@deltachat-desktop/runtime-interface'
 import { BackendRemote, Type } from '../../backend-com'
 import { selectedAccountId } from '../../ScreenController'
 import { internalOpenWebxdc } from '../../system-integration/webxdc'
-import ForwardMessage from '../dialogs/ForwardMessage'
 import ConfirmationDialog from '../dialogs/ConfirmationDialog'
-import MessageDetail from '../dialogs/MessageDetail/MessageDetail'
 
 import type { OpenDialog } from '../../contexts/DialogContext'
 import { C, T } from '@deltachat/jsonrpc-client'
-import ConfirmDeleteMessageDialog from '../dialogs/ConfirmDeleteMessage'
-import { unknownErrorToString } from '../helpers/unknownErrorToString'
-import AlertDialog from '../dialogs/AlertDialog'
+import type { msgStatus } from '../../types-app'
 
-const log = getLogger('render/msgFunctions')
+const log = getLogger('renderer/msgFunctions')
 
 /**
  * json representation of the message object we get from the backend
@@ -45,13 +41,6 @@ export async function openAttachmentInShell(msg: Type.Message) {
   }
 }
 
-export function openForwardDialog(
-  openDialog: OpenDialog,
-  message: Type.Message
-) {
-  openDialog(ForwardMessage, { message })
-}
-
 export function confirmDialog(
   openDialog: OpenDialog,
   message: string,
@@ -68,66 +57,6 @@ export function confirmDialog(
       },
     })
   })
-}
-
-export async function confirmForwardMessage(
-  openDialog: OpenDialog,
-  srcAccountId: number,
-  message: Type.Message,
-  chat: Pick<Type.BasicChat, 'name' | 'id'>,
-  dstAccountId?: number
-) {
-  const tx = window.static_translate
-  const yes = await confirmDialog(
-    openDialog,
-    tx('ask_forward', [chat.name]),
-    tx('forward')
-  )
-  if (yes) {
-    const targetAccountId = dstAccountId ?? srcAccountId
-    try {
-      if (targetAccountId !== srcAccountId) {
-        // Cross-account forward
-        await BackendRemote.rpc.forwardMessagesToAccount(
-          srcAccountId,
-          [message.id],
-          targetAccountId,
-          chat.id
-        )
-      } else {
-        // Same-account forward
-        await BackendRemote.rpc.forwardMessages(
-          srcAccountId,
-          [message.id],
-          chat.id
-        )
-      }
-    } catch (e) {
-      log.error('error forwarding message:', e)
-      void openDialog(AlertDialog, {
-        message: unknownErrorToString(e),
-      })
-      return false
-    }
-  }
-  return yes
-}
-
-export function confirmDeleteMessage(
-  openDialog: OpenDialog,
-  accountId: number,
-  msg: Type.Message,
-  chat: Type.FullChat
-) {
-  openDialog(ConfirmDeleteMessageDialog, {
-    accountId,
-    msg,
-    chat,
-  })
-}
-
-export function openMessageInfo(openDialog: OpenDialog, message: Type.Message) {
-  openDialog(MessageDetail, { id: message.id })
 }
 
 /**
@@ -167,9 +96,9 @@ export async function openMessageHTML(messageId: number) {
     sender: { displayName },
     subject,
     chatId,
-    receivedTimestamp,
+    timestamp,
   } = await BackendRemote.rpc.getMessage(accountId, messageId)
-  const receiveTime = moment(receivedTimestamp * 1000).format('LLLL')
+  const sentTime = moment(timestamp * 1000).format('LLLL')
   const { isContactRequest } = await BackendRemote.rpc.getBasicChatInfo(
     accountId,
     chatId
@@ -180,13 +109,9 @@ export async function openMessageHTML(messageId: number) {
     isContactRequest,
     subject,
     displayName,
-    receiveTime,
+    sentTime,
     content
   )
-}
-
-export async function downloadFullMessage(messageId: number) {
-  await BackendRemote.rpc.downloadFullMessage(selectedAccountId(), messageId)
 }
 
 export async function openWebxdc(
@@ -209,5 +134,19 @@ export function isMessageEditable(
     !message.isInfo &&
     !message.hasHtml &&
     message.viewType !== 'Call'
+  )
+}
+
+/**
+ * If this returns `false` then it doesn't always mean
+ * that the status should be shown.
+ */
+export function shouldHideDeliveryStatus(
+  chatType: T.ChatType,
+  status: msgStatus
+): boolean {
+  return (
+    // https://github.com/deltachat/deltachat-desktop/issues/5978
+    chatType === 'OutBroadcast' && (status === 'delivered' || status === 'read')
   )
 }

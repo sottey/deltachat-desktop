@@ -11,7 +11,6 @@
     <string name="off">Istudadu</string>
     <string name="def">Predefinidu</string>
     <string name="default_value">Predefinidu (%1$s)</string>
-    <string name="default_value_as_above">Predefinidu (comente in subra)</string>
     <string name="custom">Personalizadu</string>
     <string name="none">Perunu</string>
     <string name="automatic">Automàticu</string>
@@ -31,6 +30,7 @@
     <string name="archive">Archìvia</string>
     <!-- Verb "to unarchive", as in "remove a chat from the archive", opposite of the previous string -->
     <string name="unarchive">Riprìstina</string>
+    <!-- Verb "to mute". used to mute a chat, so that it is silenced e.g. does not make noise or cause notifications -->
     <string name="mute">Boga su sonu</string>
     <string name="ephemeral_messages">Messàgios chi isparessent</string>
     <string name="ephemeral_messages_hint">Custas impostatziones s\'àplicant a totu sos partetzipantes chi impreant Delta Chat. Nointames custu podent copiare, sarvare e torrare a imbiare messàgios o impreare àteros clientes de posta eletrònica.</string>
@@ -40,10 +40,6 @@
     <string name="profile">Profilu</string>
     <string name="main_menu">Menù printzipale</string>
     <string name="start_chat">Faghe incumintzare una tzarrada</string>
-    <!-- deprecated, UI must not offer an option to show the password -->
-    <string name="show_password">Ammustra sa crae de intrada</string>
-    <!-- deprecated, UI must not offer an option to show the password -->
-    <string name="hide_password">Cua sa crae de intrada</string>
     <string name="not_now">Como nono</string>
     <string name="never">Mai</string>
     <string name="one_moment">Unu momentu...</string>
@@ -106,6 +102,7 @@
     <string name="reply_noun">Risponde</string>
     <string name="gif">Gif</string>
     <string name="images">Immàgines</string>
+    <!-- a noun, used for "Music" and other "Audio" files -->
     <string name="audio">Àudio</string>
     <string name="voice_message">Messàgiu sonoru</string>
     <string name="forwarded_message">Messàgiu inoltradu</string>
@@ -197,14 +194,16 @@
     <string name="mute_for_seven_days">A sa muda pro 7 dies</string>
     <string name="mute_forever">A sa muda pro semper</string>
 
+    <!-- deprecated -->
     <string name="share_location_for_5_minutes">pro 5 minutos</string>
+
     <string name="share_location_for_30_minutes">pro 30 minutos</string>
     <string name="share_location_for_one_hour">pro 1 ora</string>
     <string name="share_location_for_two_hours">pro 2 oras</string>
     <string name="share_location_for_six_hours">pro 6 oras</string>
-
     <string name="file_saved_to">Documentu sarvadu in \"%1$s\".</string>
 
+    <!-- deprecated, use ask_forward_messages -->
     <string name="ask_forward">Inoltrare su messàgiu a %1$s?</string>
     <string name="ask_forward_multiple">Inoltrare messàgios a %1$d tzarradas?</string>
     <string name="ask_export_attachment">Esportare sos allegados? S\'esportatzione de sos allegados at a permìtere a cale si siat àtera aplicatzione in su dispositivu tuo de b\'atzèdere.\n\nSighire?</string>
@@ -217,11 +216,9 @@
     <string name="ask_remove_members">Cheres bogare %1$sdae su grupu?</string>
     <string name="open_url_confirmation">Cheres abèrrere custu ligàmene?</string>
 
-
     <!-- contact list -->
     <string name="contacts_title">Cuntatos</string>
     <string name="contacts_type_email_above">Inserta s\'indiritzu de posta eletrònica inoghe in subra</string>
-
 
     <!-- chatlist and chat view -->
     <plurals name="chat_archived">
@@ -258,12 +255,6 @@
     <string name="saved">Sarvadu</string>
     <string name="retry_send">Torra a proare a imbiare su messàgiu</string>
     <string name="cannot_display_unsuported_file_type">Impossìbile ammustrare custa casta de documentu: %s</string>
-    <!-- map -->
-    <string name="filter_map_on_time">Ammustra sas positziones in su tempus</string>
-    <string name="show_location_traces">Ammustra sas rastas</string>
-    <string name="add_poi">Imbia puntu de interesse</string>
-
-
     <!-- search -->
     <string name="search">Chirca</string>
     <string name="search_explain">Chirca in sas tzarradas, sos cuntatos e sos messàgios</string>
@@ -274,6 +265,7 @@
     <string name="remove_group_image">Boga s\'immàgine de su grupu</string>
     <string name="change_group_image">Càmbia s\'immàgine de su grupu</string>
     <string name="group_create_button">Crea unu grupu</string>
+    <!-- deprecated, use please_enter_chat_name -->
     <string name="group_please_enter_group_name">Inserta unu nùmene pro su grupu.</string>
     <string name="group_add_members">Annanghe mambros</string>
     <string name="group_self_not_in_group">Depes èssre unu membru de su grupu pro fàghere cust\'atzione.</string>
@@ -329,10 +321,7 @@
     <string name="share_text_multiple_chats">Cheres inviare custu testu a %1$d tzarradas?\n\n\"%2$s\"</string>
     <string name="share_abort">Cumpartzidura annullada pro permissos chi mancant.</string>
 
-
     <!-- preferences -->
-    <string name="pref_using_custom">Personalizatziones impreadas: %s</string>
-    <string name="pref_using_default">Predefinidos impreados: %s</string>
     <string name="pref_profile_info_headline">Sas informatziones de profilu tuas</string>
     <string name="pref_profile_photo">Fotografia de profilu</string>
     <string name="pref_blocked_contacts">Cuntatos blocados</string>
@@ -341,6 +330,7 @@
     <string name="pref_your_name">Su nùmene tuo</string>
     <!-- Label of the Bio/Signature/Status/Motto field -->
     <string name="pref_default_status_label">Firma</string>
+    <!-- Option name for changing behaviour of the "Enter key" to sending out a message directly (instead of adding new line). If in doubt, please refer to a similar option in other messengers. -->
     <string name="pref_enter_sends">Imbia cun \"Imbiu\"</string>
     <string name="pref_enter_sends_explain">Incarchende sa tecla Imbiu as a imbiare sos messàgios</string>
     <string name="pref_outgoing_media_quality">Calidade de sos documentos multimediales in essida</string>
@@ -360,8 +350,6 @@
     <string name="pref_sound">Sonu</string>
     <string name="pref_silent">Istuda su sonu</string>
     <string name="pref_privacy">Riservadesa</string>
-    <!-- deprecated, use pref_chats -->
-    <string name="pref_chats_and_media">Tzarradas e mèdios</string>
     <string name="pref_system_default">Predefinidu de sistema</string>
     <!-- Translators: as in "opposite of dark" -->
     <string name="pref_light_theme">Craru</string>
@@ -391,11 +379,17 @@
     <string name="pref_background">Isfundu</string>
     <string name="pref_background_btn_default">Imprea s\'immàgine predefinida</string>
     <string name="pref_background_btn_gallery">Ischerta dae sa galleria</string>
+    <!-- deprecated -->
     <string name="pref_imap_folder_warn_disable_defaults">Si disabìlitas custa opztione assegura·ti chi su serbidore tuo e totu sos àteros clientes siant cunfigurados in sa matessi manera\n\nSi nono sas cosas diant pòdere non funtzionare pro nudda.</string>
+    <!-- deprecated -->
     <string name="pref_auto_folder_moves">Tramudòngios automàticos a sa cartella DeltaChat</string>
+    <!-- deprecated -->
     <string name="pref_show_emails">Ammustra sas lìteras traditzionales</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_no">Nono, tzarradas ebbia</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_accepted_contacts">Pro sos cuntatos atzetados</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_all">Totus</string>
     <string name="pref_experimental_features">Funtzionalidades isperimentales</string>
     <string name="pref_on_demand_location_streaming">Trasmissione de sa positzione suta dimanda</string>
@@ -413,6 +407,7 @@
     <!-- automatically delete message -->
     <string name="delete_old_messages">Iscantzella sos messàgios betzos</string>
     <string name="autodel_device_title">Iscantzella sos messàgios dae su dispositivu</string>
+    <!-- deprecated -->
     <string name="autodel_server_title">Iscantzella sos messàgios dae su servidore</string>
     <!-- %1$d will be replaced by the number of messages, you can assume plural/lots here. %2$s will be replaced by a timespan option. -->
     <string name="autodel_device_ask">Cheres iscantzellare%1$d messàgios como e totu sos messàgios arribados \"%2$s\" in su tempus benidore?\n\n• Custu at a incluire totu sos documentos multimediales\n\n• Sos messàgios ant a èssere iscantzellados fintzas si no ant a èssere istados lèghidos\n\n• Sos \"Messàgios sarvados\" ant a èssere esclùdidos dae s\'iscantzellamentu locale</string>

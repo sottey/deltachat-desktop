@@ -1,12 +1,14 @@
 import { basename, dirname, join } from 'path'
 import express from 'express'
+import http from 'http'
 import https from 'https'
 import { readFile, stat, unlink } from 'fs/promises'
 import session from 'express-session'
 import { FileStore } from './session-store'
 import { authMiddleWare, CORSMiddleWare } from './middlewares'
 import resolvePath from 'resolve-path'
-import { WebSocketServer } from 'ws'
+import ws from 'ws'
+import type { WebSocket } from 'ws'
 import { BackendApiRoute } from './backendApi'
 import { MessageToBackend } from './runtime-ws-protocol'
 
@@ -22,18 +24,23 @@ import {
   localStorage,
   LOCALES_DIR,
   DATA_DIR,
+  LOGS_DIR,
   DC_ACCOUNTS_DIR,
+  DC_FRONTEND_NO_TLS,
 } from './config'
 import { startDeltaChat } from './deltachat-rpc'
 import { helpRoute } from './help'
-import { cleanupLogFolder, createLogHandler } from './log-handler'
+import {
+  cleanupLogFolder,
+  createLogHandler,
+} from '@deltachat-desktop/shared/log-handler'
 import { getLogger, setLogHandler } from '@deltachat-desktop/shared/logger'
 import { RCConfig } from './rc-config'
 import { readThemeDir } from './themes'
 
-const logHandler = createLogHandler()
+const logHandler = createLogHandler(LOGS_DIR)
 setLogHandler(logHandler.log, RCConfig)
-cleanupLogFolder()
+cleanupLogFolder(LOGS_DIR)
 const log = getLogger('main')
 
 const app = express()
@@ -61,7 +68,7 @@ const sessionParser = session({
   cookie: {
     sameSite: 'strict',
     priority: 'high',
-    secure: true, // This makes it only work in https
+    secure: !DC_FRONTEND_NO_TLS, // `secure: true` makes it only work in https
     httpOnly: true,
   },
 })
@@ -201,29 +208,34 @@ app.get('/themes.json', async (_req, res) => {
   res.json(await readThemeDir())
 })
 
-let certificate = ''
-if (process.env.PRIVATE_CERTIFICATE_CERT) {
-  certificate = process.env.PRIVATE_CERTIFICATE_CERT
+let server: http.Server | https.Server
+if (DC_FRONTEND_NO_TLS) {
+  server = http.createServer({}, app)
 } else {
-  certificate = await readFile(PRIVATE_CERTIFICATE_CERT, 'utf8')
+  let certificate = ''
+  if (process.env.PRIVATE_CERTIFICATE_CERT) {
+    certificate = process.env.PRIVATE_CERTIFICATE_CERT
+  } else {
+    certificate = await readFile(PRIVATE_CERTIFICATE_CERT, 'utf8')
+  }
+
+  let certificateKey = ''
+  if (process.env.PRIVATE_CERTIFICATE_KEY) {
+    certificateKey = process.env.PRIVATE_CERTIFICATE_KEY
+  } else {
+    certificateKey = await readFile(PRIVATE_CERTIFICATE_KEY, 'utf8')
+  }
+
+  server = https.createServer(
+    {
+      key: certificateKey,
+      cert: certificate,
+    },
+    app
+  )
 }
 
-let certificateKey = ''
-if (process.env.PRIVATE_CERTIFICATE_KEY) {
-  certificateKey = process.env.PRIVATE_CERTIFICATE_KEY
-} else {
-  certificateKey = await readFile(PRIVATE_CERTIFICATE_KEY, 'utf8')
-}
-
-const sslserver = https.createServer(
-  {
-    key: certificateKey,
-    cert: certificate,
-  },
-  app
-)
-
-const wssBackend = new WebSocketServer({
+const wssBackend = new ws.WebSocketServer({
   noServer: true,
   perMessageDeflate: true,
 })
@@ -251,7 +263,7 @@ wssBackend.on('connection', function connection(ws) {
   log.debug('connected backend socket')
 })
 
-sslserver.on('upgrade', (request, socket, head) => {
+server.on('upgrade', (request, socket, head) => {
   // eslint-disable-next-line no-console
   socket.on('error', console.error)
 
@@ -264,24 +276,31 @@ sslserver.on('upgrade', (request, socket, head) => {
     }
     const { pathname } = new URL(request.url || '', 'wss://base.url')
     if (pathname === '/ws/dc') {
-      wssDC.handleUpgrade(request, socket, head, function (ws) {
-        wssDC.emit('connection', ws, request)
+      wssDC.handleUpgrade(request, socket, head, function (socket: WebSocket) {
+        wssDC.emit('connection', socket, request)
       })
     } else if (pathname === '/ws/backend') {
-      wssBackend.handleUpgrade(request, socket, head, function (ws) {
-        wssBackend.emit('connection', ws, request)
-      })
+      wssBackend.handleUpgrade(
+        request,
+        socket,
+        head,
+        function (socket: WebSocket) {
+          wssBackend.emit('connection', socket, request)
+        }
+      )
     }
   })
 })
 
-sslserver.listen(ENV_WEB_PORT, () => {
-  log.info(`HTTPS app listening on port ${ENV_WEB_PORT}`)
+server.listen(ENV_WEB_PORT, () => {
+  log.info(
+    `${DC_FRONTEND_NO_TLS ? 'HTTP' : 'HTTPS'} app listening on port ${ENV_WEB_PORT}`
+  )
 })
 
 process.on('exit', () => {
-  sslserver.closeAllConnections()
-  sslserver.close()
+  server.closeAllConnections()
+  server.close()
   shutdownDC()
   logHandler.end()
 })

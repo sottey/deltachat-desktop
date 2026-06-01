@@ -7,22 +7,21 @@ import styles from './styles.module.scss'
 
 type Props = PropsWithChildren<{
   className?: string
-  paddingBottom?: boolean
-  paddingTop?: boolean
+  allowTopPadding?: boolean
 }>
 
 export default function DialogContent({
   children,
   className,
-  paddingBottom = false,
-  paddingTop = false,
+  allowTopPadding,
 }: Props) {
   return (
     <div
-      className={classNames(styles.dialogContent, className, {
-        [styles.paddingBottom]: paddingBottom,
-        [styles.paddingTop]: paddingTop,
-      })}
+      className={classNames(
+        styles.dialogContent,
+        allowTopPadding && styles.allowTopPadding,
+        className
+      )}
     >
       {children}
     </div>

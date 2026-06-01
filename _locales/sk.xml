@@ -16,7 +16,6 @@
     <string name="off">Vypnúť</string>
     <string name="def">Štandardné nastavenie</string>
     <string name="default_value">Štandardné nastavenie (%1$s)</string>
-    <string name="default_value_as_above">Predvolené (rovnaké ako vyššie)</string>
     <string name="custom">Vlastný</string>
     <string name="none">Nie je</string>
     <string name="automatic">Automatický</string>
@@ -34,8 +33,6 @@
     <string name="update">Aktualizovať</string>
     <string name="emoji">Smajlíci</string>
     <string name="attachment">Príloha</string>
-    <!-- the placeholder will be replaced by the name of the image or file to attach -->
-    <string name="ask_attach">Priložiť „%1$s“?</string>
     <string name="back">Späť</string>
     <string name="close">Zatvoriť</string>
     <string name="close_window">Zavrieť okno</string>
@@ -50,6 +47,7 @@
     <string name="archive">Archivovať</string>
     <!-- Verb "to unarchive", as in "remove a chat from the archive", opposite of the previous string -->
     <string name="unarchive">Zrušiť archiváciu</string>
+    <!-- Verb "to mute". used to mute a chat, so that it is silenced e.g. does not make noise or cause notifications -->
     <string name="mute">Stíšiť</string>
     <string name="ephemeral_messages">Miznúce správy</string>
     <string name="ephemeral_messages_hint">Tieto nastavenia platia pre všetkých účastníkov používajúcich Delta Chat. Môžu však kopírovať, ukladať a preposielať správy alebo používať iných e-mailových klientov.</string>
@@ -58,15 +56,18 @@
     <string name="media">Médiá</string>
     <string name="apps_and_media">Aplikácie a médiá</string>
     <string name="profile">Účet</string>
+    <!-- deprecated -->
     <string name="all_profiles">Všetky účty</string>
+    <!-- deprecated -->
     <string name="current_profile">Aktuálny účet</string>
     <string name="main_menu">Hlavné menu</string>
     <string name="start_chat">Začať konverzáciu</string>
     <string name="show_full_message">Zobraziť celú správu ...</string>
     <!-- Stay short here, say ~16 characters. The source string could also be "All Read", maybe that hint can make translations easier :) -->
     <string name="mark_all_as_read">Všetko prečítané</string>
+    <!-- Used as an menu entry or button -->
     <string name="mark_as_read">Označiť ako prečítané</string>
-    <!-- Shortest text for "Mark as being read". In english, this could be "Read" (past tense of "to read"), in german, this could be "Gelesen". -->
+    <!-- Used beside an icon with very few space. Shortest text for "Mark as being read". In english, this could be "Read" (past tense of "to read"), in german, this could be "Gelesen". -->
     <string name="mark_as_read_short">Prečítané</string>
     <!-- Placeholder text when something is loading -->
     <string name="loading">Načítam…</string>
@@ -77,11 +78,8 @@
     <string name="load_remote_content_ask">Na sledovanie vás možno použiť obrázky nadiaľku.\n\nToto nastavenie tiež umožňuje načítať písma a ďalší obsah. Aj keď je vypnutá, stále sa vám môžu zobrazovať vložené alebo uložené obrázky.\n\nNačítať vzdialené obrázky?</string>
     <string name="always">Vždy</string>
     <string name="once">Raz</string>
+    <!-- deprecated -->
     <string name="show_warning">Zobraziť varovanie</string>
-    <!-- deprecated, UI must not offer an option to show the password -->
-    <string name="show_password">Ukáž heslo</string>
-    <!-- deprecated, UI must not offer an option to show the password -->
-    <string name="hide_password">Skryť heslo</string>
     <string name="not_now">Teraz nie</string>
     <string name="never">Nikdy</string>
     <string name="one_moment">Moment...</string>
@@ -114,7 +112,7 @@
     <string name="last_month">Minulý mesiac</string>
     <!-- Refers to the time a contact was last seen. Shown below contact name in the profile. The placeholder will be replaced by date or time, resulting in "Last seen at 12:13 AM" or "Last seen Nov 12" -->
     <string name="last_seen_at">Naposledy videné o%1$s</string>
-    <!-- Refers to the time a contact was last seen. Shown below contact name in the profile. The placeholder will be replaced by a relative point in time as "3 minutes ago" (see https://momentjs.com for more examples and languages)-->
+    <!-- Refers to the time a contact was last seen. Shown below contact name in the profile. The placeholder will be replaced by a relative point in time as "3 minutes ago" (see https://momentjs.com for more examples and languages) -->
     <string name="last_seen_relative">Naposledy online %1$s</string>
     <string name="last_seen_unknown">Naposledy videné: Neznáme</string>
     <!-- Shown beside messages that are "N minutes old". Prefer short strings, or well-known abbreviations. -->
@@ -185,9 +183,12 @@
     <!-- "Stickers" as known from other messengers; in some languages, the English "Sticker" is fine. -->
     <string name="sticker">Nálepka</string>
     <string name="add_to_sticker_collection">Pridať do zbierky nálepiek</string>
+    <!-- deprecated, use sticker_picker_empty_hint instead -->
     <string name="add_stickers_instructions">Pre pridanie nálepiek, ťuknite na \"Otvoriť priečinok s nálepkami\", vytvorte priečinok pre svoju sadu nálepiek a prekopírujte doň nálepky</string>
+    <!-- deprecated -->
     <string name="open_sticker_folder">Otvoriť priečinok s nálepkami</string>
     <string name="images">Snímky</string>
+    <!-- a noun, used for "Music" and other "Audio" files -->
     <string name="audio">Zvuk</string>
     <string name="voice_message">Hlasová správa</string>
     <string name="forwarded">Preposlané</string>
@@ -201,6 +202,7 @@
     <string name="camera">Fotoaparát</string>
     <!-- As in "start a video recording" or "take a photo"; eg. the description of the "shutter button" in cameras -->
     <string name="capture">Zachytiť</string>
+    <!-- Switch eg. from front to back camera -->
     <string name="switch_camera">Prepnúť fotoaparát</string>
     <string name="toggle_fullscreen">Prepnúť režim zobrazenia na celú obrazovku</string>
     <string name="location">Poloha</string>
@@ -253,8 +255,6 @@
     <string name="channels">Kanály</string>
     <!-- consider keeping the term "channel" as in WhatsApp or Telegram -->
     <string name="new_channel">Nový kanál</string>
-    <!-- deprecated -->
-    <string name="add_recipients">Pridať Príjemcov</string>
     <!-- consider keeping the term "channel" as in WhatsApp or Telegram -->
     <string name="channel_name">Názov kanálu</string>
     <string name="email">E-mail</string>
@@ -281,8 +281,7 @@
     <string name="menu_copy_to_clipboard">Skopírovať do schránky</string>
     <string name="invite_friends">Pozvať priateľov</string>
     <!-- %1$s is replaced by the user's invitation link ("https://i.delta.chat/...") -->
-    <string name="invite_friends_text">Kontaktujte ma na Delta Chat:
-%1$s</string>
+    <string name="invite_friends_text">Kontaktujte ma na Delta Chat: %1$s</string>
     <string name="menu_copy_selection_to_clipboard">Kopírovať výber</string>
     <string name="menu_copy_link_to_clipboard">Skopírovať odkaz</string>
     <string name="menu_copy_text_to_clipboard">Kopírovať text</string>
@@ -332,8 +331,6 @@
     <string name="menu_more_options">Ďalšie možnosti</string>
     <string name="menu_learn_spelling">Naučiť sa pravopis</string>
     <string name="jump_to_message">Prejsť na správu</string>
-    <string name="jump_to_original_message">Zobraziť pôvodnú správu</string>
-    <string name="copy_json">Kopírovať JSON</string>
     <string name="replace_draft">Nahradiť koncept</string>
     <string name="title_share_location">Zdieľať polohu so všetkými členmi skupiny</string>
     <string name="device_talk">Správy zariadenia</string>
@@ -360,12 +357,13 @@
     <string name="mute_for_seven_days">Stíšiť na 7 dní</string>
     <string name="mute_forever">Stlmiť navždy</string>
 
+    <!-- deprecated -->
     <string name="share_location_for_5_minutes">po dobu 5 minút</string>
+
     <string name="share_location_for_30_minutes">po dobu 30 minút</string>
     <string name="share_location_for_one_hour">po dobu 1 hodiny</string>
     <string name="share_location_for_two_hours">po dobu 2 hodín</string>
     <string name="share_location_for_six_hours">po dobu 6 hodín</string>
-
     <plurals name="ask_send_following_n_files_to">
         <item quantity="one">Odoslať nasledujúci súbor %s používateľovi?</item>
         <item quantity="few">Odoslať nasledujúce %d súbory %s používateľovi?</item>
@@ -388,13 +386,7 @@
         <item quantity="many">Odstrániť %d správ zo všetkých vašich zariadení?</item>
         <item quantity="other">Odstrániť %d správ zo všetkých vašich zariadení?</item>
     </plurals>
-    <!-- deprecated, use ask_delete_messages -->
-    <plurals name="ask_delete_messages_simple">
-        <item quantity="one">Odstrániť %d správu?</item>
-        <item quantity="few">Odstrániť %d správy?</item>
-        <item quantity="many">Odstrániť %d správy?</item>
-        <item quantity="other">Odstrániť %d správy?</item>
-    </plurals>
+    <!-- deprecated, use ask_forward_messages -->
     <string name="ask_forward">Preposielať správy na %1$s?</string>
     <string name="ask_forward_multiple">Preposielať správy do %1$d konverzácií?</string>
     <string name="ask_export_attachment">Exportovať prílohu? Exportovanie príloh umožní prístup k nim všetkým ďalším aplikáciám na vašom zariadení.\n\nChcete pokračovať?</string>
@@ -409,11 +401,9 @@
     <string name="ask_remove_from_channel">Odstrániť %1$s z kanálu?</string>
     <string name="open_url_confirmation">Chcete otvoriť tento odkaz?</string>
 
-
     <!-- contact list -->
     <string name="contacts_title">Kontakty</string>
     <string name="contacts_type_email_above">Vyššie zadajte e-mailovú adresu</string>
-
 
     <!-- chatlist and chat view -->
     <plurals name="chat_archived">
@@ -467,8 +457,6 @@
 
     <!-- mailing lists -->
     <string name="mailing_list">Zoznam adries</string>
-    <!-- deprecated -->
-    <string name="mailing_list_profile_info">Zmeny v zozname adries a obrázku sa vzťahujú iba na toto zariadenie.</string>
 
     <!-- webxdc -->
     <!-- "Start..." button for an app -->
@@ -479,21 +467,13 @@
     <string name="send_file_to">Poslať \"%1$s\"...</string>
     <!-- title shown above a list contacts where one should be selected (eg. when a webxdc attempts to send a message to a chat) -->
     <string name="send_message_to">Poslať správu...</string>
-    <!-- map -->
-    <string name="filter_map_on_time">Zobraziť polohy v časovom rámci</string>
-    <string name="show_location_traces">Zobraziť stopy</string>
-    <string name="add_poi">Pošlite zaujímavé miesto</string>
-
 
     <!-- punycode warning / labeled links -->
-    <!-- placeholder is domain/hostname that should be trusted -->
-    <string name="open_external_url_trust_domain">Nepýtať sa znovu %1$s</string>
     <string name="puny_code_warning_header">Zistené podozrivé prepojenie</string>
     <!-- placeholder contains the hostname converted to ascii -->
     <string name="puny_code_warning_question">Naozaj chcete navštíviť %1$s?</string>
     <!-- this message is shown whenever a link with non-latin characters is clicked. first placeholder is original hostname with special chars, second placeholder is hostname encoded in ascii -->
     <string name="puny_code_warning_description">Sledovali ste odkaz, ktorý by mohol skresľovať znaky použitím podobne vyzerajúcich znakov z rôznych abecied. Sledovanie odkazu označeného %1$s povedie k %2$s, čo je normálne pre znaky mimo latinky. Ak ste takéto znaky nečakali, tento odkaz môže byť škodlivý</string>
-
 
     <!-- search -->
     <string name="search">Vyhľadávanie</string>
@@ -504,13 +484,13 @@
     <!-- Adjective, as in "Show Unread Messages" -->
     <string name="search_unread">Neprečítané</string>
 
-
     <!-- create/edit groups, contact/group profile -->
     <string name="group_name">Názov skupiny</string>
     <string name="group_avatar">Obrázok skupiny</string>
     <string name="remove_group_image">Odstrániť obrázok skupin</string>
     <string name="change_group_image">Zmeniť obrázok skupiny</string>
     <string name="group_create_button">Vytvorte skupinu</string>
+    <!-- deprecated, use please_enter_chat_name -->
     <string name="group_please_enter_group_name">Zadajte názov skupiny.</string>
     <string name="group_add_members">Pridať členov</string>
     <string name="group_self_not_in_group">Ak chcete vykonať túto akciu, musíte byť členom skupiny.</string>
@@ -543,9 +523,7 @@
     <string name="multidevice_receiver_title">Pridať ako ďalšie zariadenie</string>
     <string name="multidevice_open_settings_on_other_device">Na pôvodnom zariadení, choďte do \"Nastavenia / Pridať ďalšie zariadenie\" a naskenujte zobrazený kód</string>
     <string name="multidevice_receiver_scanning_ask">Skopírovať účet na toto zariadenie?</string>
-    <string name="multidevice_receiver_needs_update">Účet, ktorý sa snažíte importovať bol vytvorený novšou verziou Delta Chat.
-
-Ak chcete pokračovať, aktualizujte toto zariadenie na najnovšiu verziu Delta Chat.</string>
+    <string name="multidevice_receiver_needs_update">Účet, ktorý sa snažíte importovať bol vytvorený novšou verziou Delta Chat. Ak chcete pokračovať, aktualizujte toto zariadenie na najnovšiu verziu Delta Chat.</string>
     <string name="multidevice_abort">Zrušiť pridávanie nového zariadenia?</string>
     <string name="multidevice_transfer_done_devicemsg">ℹ️ Účet pridaný do ďalšieho zariadenia.</string>
     <!-- Shown beside progress bar, stay short -->
@@ -559,8 +537,6 @@ Ak chcete pokračovať, aktualizujte toto zariadenie na najnovšiu verziu Delta 
     <string name="incoming_messages">Prichádzajúce Správy</string>
     <!-- Headline for the "Outbox" eg. in the "Connectivity" view -->
     <string name="outgoing_messages">Odchádzajúce Správy</string>
-    <!-- Headline in the "Connectivity" view. Placeholder will be replaced by a domain -->
-    <string name="storage_on_domain">Dáta o %1$s</string>
     <string name="connectivity">Pripojenie</string>
     <!-- Shown in the title bar if the app is "Not connected"; prefer short strings. -->
     <string name="connectivity_not_connected">Nepripojené</string>
@@ -572,17 +548,17 @@ Ak chcete pokračovať, aktualizujte toto zariadenie na najnovšiu verziu Delta 
     <string name="connectivity_connected">Pripojené</string>
     <string name="sending">Odosielam...</string>
     <string name="last_msg_sent_successfully">Posledná správa odoslaná úspešne.</string>
+    <!-- deprecated -->
     <string name="not_supported_by_provider">Nie je podporovaná vaším poskytovateľom.</string>
     <!-- Subtitle in quota context of "Connectivity" view. Should be be plural always, no number is prefixed. -->
     <string name="messages">Správy</string>
     <!-- Used for describing resource usage, resulting string will be eg. "1.2 GiB of 3 GiB used" -->
     <string name="part_of_total_used">%1$s z %2$svyužitých </string>
 
-
     <!-- welcome and login -->
     <!-- Primary button on the welcome screen, allows to create an instant profile -->
     <string name="onboarding_create_instant_account">Nový účet</string>
-    <!-- Secondary button on the welcome screen, allows to "Add as Second Device", "Restore from Backup"  -->
+    <!-- Secondary button on the welcome screen, allows to "Add as Second Device", "Restore from Backup" -->
     <string name="onboarding_alternative_logins">Existujúci účet</string>
     <!-- This is a button and a title, allowing to use existing, classic email, setting ports, passwords and so on -->
     <string name="manual_account_setup_option">Použiť bežné e-mailové konto</string>
@@ -656,10 +632,7 @@ Ak chcete pokračovať, aktualizujte toto zariadenie na najnovšiu verziu Delta 
     <string name="share_text_multiple_chats">Odoslať tento text d %1$d konverzácií?\n\n \"%2$s\"</string>
     <string name="share_abort">Zdieľanie bolo prerušené z dôvodu chýbajúcich povolení.</string>
 
-
     <!-- preferences -->
-    <string name="pref_using_custom">Používa sa vlastné: %s</string>
-    <string name="pref_using_default">Používa sa predvolené nastavenie: %s</string>
     <string name="pref_profile_info_headline">Informácie o vašom účte</string>
     <string name="pref_profile_photo">Profilový obrázok</string>
     <string name="pref_blocked_contacts">Blokované kontakty</string>
@@ -668,6 +641,7 @@ Ak chcete pokračovať, aktualizujte toto zariadenie na najnovšiu verziu Delta 
     <string name="pref_your_name">Vaše meno</string>
     <!-- Label of the Bio/Signature/Status/Motto field -->
     <string name="pref_default_status_label">Text v podpise</string>
+    <!-- Option name for changing behaviour of the "Enter key" to sending out a message directly (instead of adding new line). If in doubt, please refer to a similar option in other messengers. -->
     <string name="pref_enter_sends">Zadajte odoslanie kľúča</string>
     <string name="pref_enter_sends_explain">Textové správy sa odošlú po stlačení Enteru</string>
     <string name="pref_outgoing_media_quality">Kvalita odchádzajúcich médií</string>
@@ -683,13 +657,12 @@ Ak chcete pokračovať, aktualizujte toto zariadenie na najnovšiu verziu Delta 
     <string name="pref_notifications_priority">Priorita</string>
     <string name="pref_notifications_explain">Povoliť systémové upozornenia na nové správy</string>
     <string name="pref_show_notification_content">Zobraziť obsah správy v upozornení</string>
+    <!-- deprecated -->
     <string name="pref_show_notification_content_explain">V oznámeniach sa zobrazuje odosielateľ a prvé slová správy</string>
     <string name="pref_led_color">Farba LED</string>
     <string name="pref_sound">Zvuk</string>
     <string name="pref_silent">Ticho</string>
     <string name="pref_privacy">Ochrana osobných údajov</string>
-    <!-- deprecated, use pref_chats -->
-    <string name="pref_chats_and_media">Konverzácie a médiá</string>
     <string name="pref_system_default">Predvolené nastavenie</string>
     <!-- Translators: as in "opposite of dark" -->
     <string name="pref_light_theme">Svetlo</string>
@@ -724,12 +697,19 @@ Ak chcete pokračovať, aktualizujte toto zariadenie na najnovšiu verziu Delta 
     <string name="pref_background">Pozadie</string>
     <string name="pref_background_btn_default">Použiť predvolený obrázok</string>
     <string name="pref_background_btn_gallery">Vyberte z galérie</string>
+    <!-- deprecated -->
     <string name="pref_imap_folder_warn_disable_defaults">Ak túto možnosť zakážete, uistite sa, že váš server a ostatní klienti sú zodpovedajúcim spôsobom nakonfigurovaní.\n\nV opačnom prípade nemusí fungovať vôbec.</string>
+    <!-- deprecated -->
     <string name="pref_auto_folder_moves">Automaticky presúvať do priečinka DeltaChat</string>
+    <!-- deprecated -->
     <string name="pref_only_fetch_mvbox_title">Prijímať iba z priečinka DeltaChat</string>
+    <!-- deprecated -->
     <string name="pref_show_emails">Zobraziť klasické e-maily</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_no">Nie, iba konverzácie</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_accepted_contacts">Pre prijaté kontakty</string>
+    <!-- deprecated -->
     <string name="pref_show_emails_all">Všetky</string>
     <string name="pref_experimental_features">Experimentálne vlastnosti</string>
     <string name="pref_on_demand_location_streaming">Vysielanie polohy na požiadanie</string>
@@ -744,11 +724,6 @@ Ak chcete pokračovať, aktualizujte toto zariadenie na najnovšiu verziu Delta 
     <string name="up_to_x_most_worse_quality_images">Až do %1$s, väčšina obrázkov v horšej kvalite</string>
     <string name="up_to_x_most_balanced_quality_images">Až do %1$s, väčšina obrázkov vo vyváženej kvalite</string>
     <string name="download_failed">Sťahovanie zlyhalo</string>
-    <!-- %1$s will be replaced by a human-readable number of bytes, eg. 32 KiB, 1 MiB. Resulting string eg. "1 MiB message" -->
-    <string name="n_bytes_message">%1$s správa</string>
-    <!-- %1$s will be replaced by human-readable date and time -->
-    <string name="download_max_available_until">Maximálny počet stiahnutí k dispozícii do %1$s</string>
-    <string name="select_profile">Vybrať účet</string>
     <string name="profile_image_select">Vyberte profilový obrázok</string>
     <string name="select_your_new_profile_image">Vyberte svoj nový profilový obrázok</string>
     <string name="profile_image_delete">Odstrániť profilový obrázok</string>
@@ -780,12 +755,13 @@ Ak chcete pokračovať, aktualizujte toto zariadenie na najnovšiu verziu Delta 
     <!-- automatically delete message -->
     <string name="delete_old_messages">Odstraňovať staré správy</string>
     <string name="autodel_device_title">Odstráňte správy zo zariadenia</string>
+    <!-- deprecated -->
     <string name="autodel_server_title">Odstraňovať správy zo servera</string>
     <!-- %1$d will be replaced by the number of messages, you can assume plural/lots here. %2$s will be replaced by a timespan option. -->
     <string name="autodel_device_ask">Chcete odstrániť %1$d správy a všetky novo načítané správy %2$s v budúcnosti?\n\n• Zahŕňa to všetky médiá\n\n• Správy budú odstránené bez ohľadu na to, či boli alebo neboli videné\n\n• „Uložené správy \"bude preskočené z lokálneho mazania</string>
-    <!-- %1$d will be replaced by the number of messages, you can assume plural/lots here. %2$s will be replaced by a timespan option. -->
+    <!-- deprecated -->
     <string name="autodel_server_ask">Chcete odstrániť %1$d správy a všetky novo načítané správy %2$s v budúcnosti?\n\n⚠️ Zahŕňa to e-maily, médiá a uložené správy vo všetkých priečinkoch servera\n\n⚠️ Túto funkciu nepoužívajte, ak chcete uchovanie údajov na serveri\n\n⚠️ Túto funkciu nepoužívajte, ak okrem Delta Chatu používate aj iných e-mailových klientov</string>
-    <!-- shown below enabled autodel_server-option, should be a summary of autodel_server_ask and remind about the impact -->
+    <!-- deprecated -->
     <string name="autodel_server_enabled_hint">Patria sem e-maily, médiá a „Uložené správy“ vo všetkých priečinkoch servera. Túto funkciu nepoužívajte, ak chcete uchovať údaje na serveri alebo ak okrem Delta Chatu používate aj iných e-mailových klientov.</string>
     <string name="autodel_confirm">Rozumiem, vymazať všetky tieto správy</string>
     <!-- "At once" in the meaning of "Immediately", without any intervening time. -->
@@ -832,10 +808,6 @@ Ak chcete pokračovať, aktualizujte toto zariadenie na najnovšiu verziu Delta 
     <string name="ephemeral_timer_seconds_by_you">Časovač zmiznutia správ nastavený na %1$s s mnou.</string>
     <!-- %1$s will be replaced by the number of seconds (always >1) the timer is set to, %2$s will be replaced by name of the contact -->
     <string name="ephemeral_timer_seconds_by_other">Časovač zmiznutia správ nastavený na %1$s s od %2$s.</string>
-    <!-- deprecated, usage needs to be removed in core -->
-    <string name="ephemeral_timer_1_minute_by_you">Časovač zmiznutia správ bol nastavený na 1 minútu mnou.</string>
-    <!-- deprecated, usage needs to be removed in core -->
-    <string name="ephemeral_timer_1_minute_by_other">Časovač zmiznutia správ bol nastavený na 1 minútu od %1$s.</string>
     <string name="ephemeral_timer_1_hour_by_you">Časovač zmiznutia správ bol nastavený na 1 hodinu mnou.</string>
     <!-- %1$s will be replaced by name of the contact -->
     <string name="ephemeral_timer_1_hour_by_other">Časovač zmiznutia správ bol nastavený na 1 hodinu od %1$s.</string>
@@ -865,8 +837,8 @@ Ak chcete pokračovať, aktualizujte toto zariadenie na najnovšiu verziu Delta 
     <string name="learn_more">Zistiť viac</string>
 
     <string name="devicemsg_self_deleted">Odstránili ste konverzáciu \"Uložené správy\".\n\nℹ️ Aby ste využili funkciu \"Uložené správy\" znova, vytvorte novú konverzáciu so sebou.</string>
-    <!-- %1$s will be replaced by the amount of storage already used, sth. as '500 MB'. If you want to use a percentage sign, type in two of them, eg. %1$s %% -->
-    <string name="devicemsg_storage_exceeding">⚠️ Úložisko vašeho poskytovateľa čoskoro prekročí limit, už%1$s%%  sú využité.\n\n Je možné, že nebudete môcť prijímať správy, ak bude úložisko 100 %% využité.\n\n👉 Prosím skontrolujte, či môžete vo webovom rozhraní poskytovateľa vymazať staré údaje, a zvážte aktiváciu „Nastavenia / Odstrániť Staré Správy“. Aktuálne využitie úložiska si môžete kedykoľvek skontrolovať v časti „Nastavenia / Pripojenie“. </string>
+    <!-- deprecated -->
+    <string name="devicemsg_storage_exceeding">⚠️ Úložisko vašeho poskytovateľa čoskoro prekročí limit, už%1$s%% sú využité.\n\n Je možné, že nebudete môcť prijímať správy, ak bude úložisko 100 %% využité.\n\n👉 Prosím skontrolujte, či môžete vo webovom rozhraní poskytovateľa vymazať staré údaje, a zvážte aktiváciu „Nastavenia / Odstrániť Staré Správy“. Aktuálne využitie úložiska si môžete kedykoľvek skontrolovať v časti „Nastavenia / Pripojenie“. </string>
     <!-- %1%s will be replaced by date and time in some human-readable format -->
     <string name="devicemsg_bad_time">Zdá sa, že dátum alebo čas vášho zariadenia je nepresný (%1$s).\n\nUpravte si hodiny ⏰🔧, aby ste zaistili správne prijímanie správ. </string>
     <string name="devicemsg_update_reminder">⚠️ Vaša verzia Delta Chat-u môže byť zastaraná.\n\nMôže to spôsobiť problémy, pretože vaši chatový partneri používajú novšie verzie – a vám chýbajú najnovšie funkcie 😳\nAktualizácie nájdete na https://get.delta.chat alebo obchode s aplikáciami . </string>
@@ -903,18 +875,10 @@ Ak chcete pokračovať, aktualizujte toto zariadenie na najnovšiu verziu Delta 
     <string name="qrshow_join_contact_hint">Naskenujte a vytvorte kontakt s %1$s .</string>
     <string name="qrshow_join_contact_no_connection_toast">Nie je pripojenie na internet, nedá sa nastaviť kód QR.</string>
     <string name="qraccount_ask_create_and_login">Vytvoriť nový účet na „%1$s“ a prihlásiť sa?</string>
-    <!-- deprecated, use confirm_add_transport when scanning such a QR code from the main scanner -->
-    <string name="qraccount_ask_create_and_login_another">Vytvoriť nový účet na „%1$s“ a prihlásiť sa?
-
-Váš existujúci účet nebude odstránený. Medzi účtami môžete prepínať pomocou „Prepnúť účet“.</string>
     <string name="please_enter_name">Prosím, zadajte meno.</string>
     <string name="qraccount_qr_code_cannot_be_used">Naskenovaný QR kód nie je možné použiť na založenie nového účtu.</string>
     <!-- the placeholder will be replaced by the address of the profile -->
     <string name="qrlogin_ask_login">Prihlásiť sa na \"%1$s\"?</string>
-    <!-- deprecated, use confirm_add_transport when scanning such a QR code from the main scanner -->
-    <string name="qrlogin_ask_login_another">Prihlásiť sa do „%1$s“?
-
-Váš existujúci účet nebude odstránený. Medzi účtami môžete prepínať pomocou „Prepnúť účet“.</string>
     <!-- first placeholder will be replaced by name of the inviter, second placeholder will be replaced by the name of the inviter. -->
     <string name="secure_join_started">%1$s vás pozval, aby ste sa pripojili k tejto skupine.\n\nČaká sa na odpoveď zo zariadenia používateľa %2$s...</string>
     <!-- placeholder will be replaced by the name of the inviter. -->
@@ -925,8 +889,7 @@ Váš existujúci účet nebude odstránený. Medzi účtami môžete prepínať
     <!-- first placeholder is the name of the chat -->
     <string name="confirm_replace_draft">%1$s už má koncept správy, chcete ho nahradiť?</string>
     <string name="mailto_link_could_not_be_decoded">prepojenie mailto sa nepodarilo dekódovať: %1$s</string>
-
-    <!-- notifications  -->
+    <!-- notifications -->
     <string name="notify_reply_button">Odpovedať</string>
     <string name="notify_new_message">Nová správa</string>
     <string name="notify_background_connection_enabled">Pripojenie na pozadí je povolené</string>
@@ -956,9 +919,6 @@ Váš existujúci účet nebude odstránený. Medzi účtami môžete prepínať
     <string name="ImageEditorHud_flip">Preklopiť</string>
     <string name="ImageEditorHud_rotate">Otočiť</string>
 
-    <!-- strings introduced on desktop. we want to share strings between the os, in general, please do not add generic strings here -->
-    <string name="about_offical_app_desktop">Toto je oficiálna aplikácia Delta Chat Desktop.</string>
-    <string name="about_licensed_under_desktop">Tento softvér je licencovaný pod GNU GPL verzie 3 a zdrojový kód je k dispozícii na GitHub-e.</string>
     <string name="welcome_desktop">Víta vás Delta Chat</string>
     <string name="global_menu_preferences_language_desktop">Jazyk</string>
     <string name="global_menu_file_desktop">Súbor</string>
@@ -995,9 +955,9 @@ Váš existujúci účet nebude odstránený. Medzi účtami môžete prepínať
     <string name="menu.view.developer.open.log.folder">Otvoriť priečinok denníka</string>
     <string name="menu.view.developer.open.current.log.file">Otvoriť aktuálny súbor protokolu</string>
     <string name="explain_desktop_minimized_disabled_tray_pref" tools:ignore="TypographyDashes">Ikonu v systémovej lište nie je možné vypnúť, pretože Delta Chat bol spustený s prepínačom --minimized.</string>
+    <!-- deprecated, used on desktop although there is not spell checker -->
     <string name="no_spellcheck_suggestions_found">Neboli nájdené žiadne návrhy opravy preklepov.</string>
     <string name="show_window">Zobraziť okno</string>
-
     <!-- title of the "keybindings" dialog (for the keybindings names as such, where possible the normal command strings are used) -->
     <string name="keybindings">Klávesové skratky</string>
     <string name="switch_between_chats">Prepínanie medzi konverzáciami</string>
@@ -1019,7 +979,6 @@ Váš existujúci účet nebude odstránený. Medzi účtami môžete prepínať
     <string name="a11y_message_context_menu_btn_label">Akcie správ</string>
     <string name="a11y_background_preview_label">Ukážka na pozadí</string>
     <string name="a11y_disappearing_messages_activated">Miznúce správy boli aktivované</string>
-
     <!-- iOS specific strings, developers: please take care to remove strings that are no longer used! -->
     <string name="stop_sharing_location">Vypnúť zdieľanie polohy</string>
     <string name="a11y_voice_message_hint_ios">Po zaznamenaní nahrávky ju dvojitým klepnutím odošlete. Nahrávku zahodíte potiahnutím dvoma prstami vľavo-vpravo.</string>

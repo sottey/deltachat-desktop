@@ -11,13 +11,12 @@ import useTranslationFunction from './useTranslationFunction'
 import { BackendRemote } from '../backend-com'
 import { ReceiveBackupProgressDialog } from '../components/dialogs/SetupMultiDevice'
 import { getLogger } from '../../../shared/logger'
-import { processQr, QrWithUrl } from '../backend/qr'
 
 import type { T } from '@deltachat/jsonrpc-client'
 import type { WelcomeQrWithUrl } from '../contexts/InstantOnboardingContext'
 import type { TranslationKey } from '../../../shared/translationKeyType'
 import useChat from './chat/useChat'
-import { unknownErrorToString } from '../components/helpers/unknownErrorToString'
+import { unknownErrorToString } from '@deltachat-desktop/shared/unknownErrorToString'
 import ProxyConfiguration from '../components/dialogs/ProxyConfiguration'
 import { useSettingsStore } from '../stores/settings'
 import TransportsDialog from '../components/dialogs/Transports'
@@ -184,7 +183,7 @@ export default function useProcessQR() {
         }
       } else if (qr.kind === 'askJoinBroadcast') {
         const userConfirmed = await openConfirmationDialog({
-          message: tx('instant_onboarding_confirm_channel', qr.name),
+          message: tx('instant_onboarding_confirm_group', qr.name),
           confirmLabel: tx('ok'),
           dataTestid: 'ask-create-profile-and-join-channel',
         })
@@ -211,9 +210,9 @@ export default function useProcessQR() {
     ): Promise<void> => {
       // Check if given string is a valid DeltaChat URI-Scheme and return
       // parsed object, otherwise show an error to the user
-      let parsed: QrWithUrl
+      let qr: T.Qr
       try {
-        parsed = await processQr(accountId, url)
+        qr = await BackendRemote.rpc.checkQr(accountId, url)
       } catch (err) {
         log.error(err)
 
@@ -224,8 +223,6 @@ export default function useProcessQR() {
 
         return callback?.()
       }
-
-      const { qr } = parsed
 
       if (qr.kind === 'backupTooNew') {
         await openAlertDialog({
@@ -310,7 +307,7 @@ export default function useProcessQR() {
             })
           }
         } else {
-          await startInstantOnboarding(accountId, { ...parsed, qr })
+          await startInstantOnboarding(accountId, { url, qr })
         }
 
         return callback?.()
@@ -335,11 +332,11 @@ export default function useProcessQR() {
           // Ask user to create a new account with instant onboarding flow before they
           // can enter the secure join flow
           await startInstantOnboarding(accountId, {
-            ...parsed,
+            url,
             qr,
           })
         } else {
-          const chatId = await secureJoin(accountId, { ...parsed, qr })
+          const chatId = await secureJoin(accountId, { url, qr })
           if (chatId) {
             selectChat(accountId, chatId)
           }
