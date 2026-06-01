@@ -1,0 +1,6 @@
+#!/bin/bash
+set -euo pipefail
+
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+cd ~/projects/deltachat-desktop
+nohup /bin/bash ./run.sh > app.log 2>&1 &

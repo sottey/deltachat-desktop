@@ -107,7 +107,8 @@ fn get_git_ref() -> String {
     }
 
     let git_describe = gather_process_stdout("git", &["describe", "--tags"])
-        .expect("git describe failed;Hint: you could also set VERSION_INFO_GIT_REF manually");
+        .or_else(|_| gather_process_stdout("git", &["rev-parse", "--short", "HEAD"]))
+        .unwrap_or_else(|_| "unknown".to_string());
     let git_branch;
 
     if let Ok(git_symbolic_ref) =

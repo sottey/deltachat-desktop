@@ -29,19 +29,15 @@ export function set_has_unread(new_has_unread: boolean) {
 
 function TrayImage(): string | NativeImage {
   const trayIconFolder = join(htmlDistDir(), 'images/tray')
+  const iconName = has_unread ? 'deltachat-unread' : 'deltachat'
   if (process.platform === 'darwin') {
-    const image = nativeImage
-      .createFromPath(join(trayIconFolder, 'tray-icon-mac.png'))
+    return nativeImage
+      .createFromPath(join(trayIconFolder, `${iconName}.png`))
       .resize({ width: 24 })
-    image.setTemplateImage(true)
-    return image
   } else {
     const iconFormat = process.platform === 'win32' ? '.ico' : '.png'
 
-    return `${join(
-      trayIconFolder,
-      (has_unread ? 'deltachat-unread' : 'deltachat') + iconFormat
-    )}`
+    return `${join(trayIconFolder, iconName + iconFormat)}`
   }
 }
 
